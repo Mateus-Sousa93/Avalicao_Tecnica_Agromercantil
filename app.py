@@ -19,25 +19,25 @@ import json
 # Database
 from sqlalchemy import create_engine, text
 
-# Google Gemini
+# Google Gemini - usando nova biblioteca google-genai
 from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_AVAILABLE = False
-gemini_model = None
+gemini_client = None
 
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
-        gemini_model = genai.GenerativeModel('gemini-pro')
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
         GEMINI_AVAILABLE = True
         print("OK: Gemini API configurada")
     else:
         print("AVISO: GEMINI_API_KEY nao encontrada no .env")
 except ImportError:
-    print("AVISO: Biblioteca google-generativeai nao instalada")
+    print("AVISO: Biblioteca google-genai nao instalada")
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('SECRET_KEY', 'agromercantil-secret-key-2025')
@@ -334,7 +334,7 @@ def chat_api():
         return jsonify({'response': 'Olá! Como posso ajudar você hoje?'})
     
     # Se Gemini não estiver disponível, usar respostas locais
-    if not GEMINI_AVAILABLE or not gemini_model:
+    if not GEMINI_AVAILABLE or not gemini_client:
         return jsonify({'response': get_local_response(user_message)})
     
     try:
@@ -352,14 +352,15 @@ Usuário: {user_message}
 
 Responda como o AgroBot:"""
 
-        # Gerar resposta com Gemini
-        response = gemini_model.generate_content(
-            full_prompt,
-            generation_config={
-                'temperature': 0.7,
-                'max_output_tokens': 300,
-                'top_p': 0.9,
-            }
+        # Gerar resposta com Gemini (nova API)
+        response = gemini_client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.7,
+                max_output_tokens=300,
+                top_p=0.9
+            )
         )
         
         bot_response = response.text.strip()
