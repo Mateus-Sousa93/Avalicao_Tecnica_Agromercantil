@@ -1,0 +1,97 @@
+=== PÁGINA 1 ===
+A V ALIA Ç Ã O TÉ CNIC A  | ANALIS T A  de D adosIntrodução
+P ar abéns Candidat o!  P or ter a v ançado par a esta etapa! Este teste tem como objetiv o a v aliar suas habilidades práticas em 
+A nalista de Dados, especialmente em SQL       e Python      , além de sua capacidade de lidar com 
+pr oblemas reais e entregar soluções eficientes.Regr as e Orient ações
+Respostas de vem ser organizadas em um repositório Git (público ou priv ado) com
+Scripts ou pr ojet os
+Documentação explicando o r aciocínio adotado
+Testes unitários par a códigos rele v antes
+A entrega será a v aliada pela originalidade, clareza e aderência às melhores práticas
+Respostas pr ontas ou genéricas que não demonstrem pensament o crítico serão penalizadas.
+Utilize P ostgreSQL par a responder às questões de SQL
+Utilize Python com Streamlit par a apresentar os resultados das análises
+Insir a os dados manualmente, simulando um cenário real com uma v ariedade de categorias e 
+preços
+A a v aliação de ve ser documentada no GitHub, incluindo prints das consultas e da aplicação 
+Streamlit
+Justifique a criação de índices e outr as otimizações.instruções
+1
+agr o-e
+
+=== PÁGINA 2 ===
+A V ALIA Ç Ã O TÉ CNIC A  | analis t a  de d adosBanco de dados
+Banco de Dados (Criação e P opulação das T abelas)-- Criando as tabelas 
+CREA TE T ABLE clientes ( 
+    id_cliente SERIAL PRIMAR Y KEY, 
+    nome V ARCH AR(100), 
+    data_cadastr o DA TE 
+);  
+CREA TE T ABLE pr odut os ( 
+    id_pr odut o SERIAL PRIMAR Y KEY, 
+    nome V ARCH AR(100), 
+    categoria V ARCH AR(50), 
+    preco NUMERIC 
+);  
+CREA TE T ABLE pedidos ( 
+    id_pedido SERIAL PRIMAR Y KEY, 
+    data_pedido DA TE, 
+    v alor_t otal NUMERIC, 
+    id_cliente INT  REFERENCES clientes(id_cliente) 
+);  
+CREA TE T ABLE itens_pedido ( 
+    id_item SERIAL PRIMAR Y KEY, 
+    id_pedido INT  REFERENCES pedidos(id_pedido), 
+    id_pr odut o INT  REFERENCES pr odut os(id_pr odut o), 
+    quantidade INT, 
+    preco_unitario NUMERIC 
+);
+2
+agr o-e
+
+=== PÁGINA 3 ===
+A V ALIA Ç Ã O TÉ CNIC A  | analis t a  de d adosQUESTÕES SQL
+Inserção e Mock de Dados (20 pont os)T arefas:Insir a dados manualmente, criando um cenário de compr as que inclua diferentes categorias 
+e pr odut os, com v ariação nos preços e quantidades
+Justifique as escolhas de dados e como eles refletem um cenário real.
+A nálise de Recência, F requência e V alor (RFM) (30 pont os)Crie uma consulta utilizando C TE e funções de janela (SUM O VER, COUNT  O VER) par a ret ornar:T arefas:id_clientedias_desde_ultimo_pedido (calcule a par tir da data atual)t otal_pedidos (númer o t otal de pedidos feit os pelo cliente)ticket_medio(v alor médio dos pedidos do cliente)Use  a  função  L AG  par a  identificar  a  data  do  último  pedido  e  calcular  os  dias  desde  o  último  
+pedido.
+Alter ação do Modelo de Dados (20 pont os) D escre v a como v oc ê  mudaria o modelo de dados par a permitir que um pedido tenha múltiplos 
+clientes, simulando um caso de compr as compar tilhadas
+ F orneça o c ó digo SQL necessário par a implementar essa mudança.
+T op 5  pr odut os m ais rentá v eis no ú lti m o ano (30 pont os)Utili z e uma C TE par a calcular a receita t otal ger ada por cada pr odut o no último ano e ret orne os 5  
+pr odut os mais rentáveis. C onsidere :id_pr odut onomet otal_vendas(soma doquantidade *  preco_unitario)
+3
+agr o-e
+
+=== PÁGINA 4 ===
+A V ALIA Ç Ã O TÉ CNIC A  | analis t a  de d adosQUESTÕES SQL
+A nálise de Tendências de Vendas (30 pont os)Crie uma consulta que utilize C TE e funções de janela par a analisar as tendências de vendas por mês. A 
+consulta de ve ret ornar:mes_ano (format o 'Y Y Y Y -MM')t otal_vendas(soma do v alor t otal de t odos os pedidos)cresciment o_per centual(compar ação com o mês anterior usando L AG)
+Identificação de Clientes Inativ os (20 pont os)Liste os clientes que não realizar am pedidos nos últimos 6 meses. Utilize C TE e funções de janela par a 
+fazer essa análise.
+Detecção de A nomalias em Vendas (25 pont os)Encontre pedidos onde o v alor t otal registr ado não bate com a soma dos itens 
+(itens_pedido.quantidade * preco_unitario). Utilize C TE par a facilitar a análise e ret orne:id_pedidov alor_t otal_registr adov alor_calculado
+O timi z ação e Inde x ação (20 pont os)A v alie a per formance das consultas anteriores e sugir a mel h orias. J usti fi que a criação de í ndices e 
+outr as otimizações ,  consider ando a comple x idade das consultas.
+4
+agr o-e
+
+=== PÁGINA 5 ===
+A V ALIA Ç Ã O TÉ CNIC A  | analis t a  de d adosQUESTÕES py thon (streamlit)
+Apresentação dos Dados (50 pont os)Crie uma aplicação Streamlit que exiba os dados pr ocessados, com dashboards inter ativ os par a 
+visualização dos resultados das consultas SQL
+Utilize gráficos e tabelas inter ativ as par a mostr ar os resultados, permitindo filtr ar clientes por 
+atividade e pedidos por data
+Implemente uma funcionalidade que permita ao usuário selecionar diferentes períodos par a 
+análise.
+A nálise Explor atória com P andas e Matplo tlib (30 pont os)Utilize P andas par a carregar os dados e realizar análises estatísticas a v ançadas
+Exiba gráficos (hist ogr amas, scatter plots, bo x plots) par a insights visuais, enfatizando as 
+correlações e tendências nos dados.Critérios de A v aliação
+20%20%20%20%20%Peso
+Justificativ a das Decisões (mock de dados, otimizações)Visualização e Inter atividade (Streamlit)Clareza e Estrutur ação do CódigoComplexidade e Eficiência (uso de C TE, funções j anela, j oins)Precisão (resultados corret os)Critéri o
+I nstr u ç õ es par a AplicaçãoUse um ambiente contr olado
+Tempo limite :  2 hor as
+ A a v aliação de ve ser entregue e documentada no GitHub, com prints das consultas e do Streamlit.5
+agr o-e
+
