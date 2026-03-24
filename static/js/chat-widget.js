@@ -25,33 +25,32 @@
                 }
                 
                 #chat-widget-button {
-                    width: 60px;
-                    height: 60px;
-                    background: white;
-                    border-radius: 16px 0 0 16px;
+                    width: 56px;
+                    height: 56px;
+                    background: #112800;
+                    border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
-                    box-shadow: -4px 0 20px rgba(17, 40, 0, 0.25);
+                    box-shadow: 0 4px 16px rgba(17, 40, 0, 0.4);
                     transition: all 0.3s ease;
-                    border: none;
-                    border-right: 4px solid #F58220;
-                    padding: 8px;
+                    border: 3px solid #F58220;
+                    padding: 0;
                     overflow: hidden;
+                    margin-right: 16px;
                 }
                 
                 #chat-widget-button:hover {
-                    width: 68px;
-                    transform: translateX(-4px);
-                    box-shadow: -6px 0 24px rgba(17, 40, 0, 0.35);
+                    transform: scale(1.1);
+                    box-shadow: 0 6px 20px rgba(17, 40, 0, 0.5);
                 }
                 
                 #chat-widget-button img {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
-                    border-radius: 10px;
+                    border-radius: 50%;
                 }
                 
                 #chat-widget-panel {
@@ -273,14 +272,30 @@
             
             <div id="chat-widget-container">
                 <button id="chat-widget-button" title="Falar com AgroBot">
-                    <img src="/static/images/agent.png" alt="AgroBot" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23fff%22><text x=%2212%22 y=%2216%22 text-anchor=%22middle%22 font-size=%2214%22>🤖</text></svg>'; this.style.padding='8px';">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;">
+                        <circle cx="12" cy="8" r="4" fill="#F58220"/>
+                        <rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/>
+                        <circle cx="9" cy="14" r="1.5" fill="#112800"/>
+                        <circle cx="15" cy="14" r="1.5" fill="#112800"/>
+                        <rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/>
+                        <rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/>
+                        <rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/>
+                    </svg>
                 </button>
             </div>
             
             <div id="chat-widget-panel">
                 <div id="chat-widget-header">
                     <h3>
-                        <img src="/static/images/agent.png" alt="AgroBot" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'material-symbols-outlined\' style=\'font-size: 32px;\'>support_agent</span>';">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;">
+                            <circle cx="12" cy="8" r="4" fill="#F58220"/>
+                            <rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/>
+                            <circle cx="9" cy="14" r="1.5" fill="#112800"/>
+                            <circle cx="15" cy="14" r="1.5" fill="#112800"/>
+                            <rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/>
+                            <rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/>
+                            <rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/>
+                        </svg>
                         <div>
                             <div style="font-size: 16px; font-weight: 600;">AgroBot</div>
                             <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Analista de Commodities</div>
@@ -432,7 +447,7 @@
             welcomeEl.className = 'chat-message bot';
             welcomeEl.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <img src="/static/images/agent.png" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="12" cy="8" r="4" fill="#F58220"/><rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/><circle cx="9" cy="14" r="1.5" fill="#112800"/><circle cx="15" cy="14" r="1.5" fill="#112800"/><rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/><rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/><rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/></svg>
                     <strong>AgroBot</strong>
                 </div>
                 Olá! 👋 Tudo bem? Sou seu assistente aqui na Agromercantil.<br><br>
@@ -470,7 +485,7 @@
                 if (msg.sender === 'bot' && index > 0) {
                     msgEl.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; opacity: 0.7;">
-                            <img src="/static/images/agent.png" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;"><circle cx="12" cy="8" r="4" fill="#F58220"/><rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/><circle cx="9" cy="14" r="1.5" fill="#112800"/><circle cx="15" cy="14" r="1.5" fill="#112800"/><rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/><rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/><rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/></svg>
                             <span style="font-size: 11px;">AgroBot</span>
                         </div>
                         ${formatMessage(msg.text)}

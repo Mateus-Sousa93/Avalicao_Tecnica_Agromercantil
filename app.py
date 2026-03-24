@@ -84,11 +84,11 @@ MOCK_METRICS = {
 }
 
 MOCK_TOP_CLIENTES = [
-    {'nome': 'Cooperativa Agricola Mato Grosso', 'valor_total': 2450000, 'segmento': 'Campeao'},
-    {'nome': 'Agropecuaria Sul LTDA', 'valor_total': 1890000, 'segmento': 'Campeao'},
-    {'nome': 'Fazenda Boa Vista', 'valor_total': 1240000, 'segmento': 'Fiel'},
-    {'nome': 'Cerealista Brasil SA', 'valor_total': 980000, 'segmento': 'Fiel'},
-    {'nome': 'Produtores Associados GO', 'valor_total': 765000, 'segmento': 'Ativo'},
+    {'id_cliente': 1, 'nome': 'Cooperativa Agricola Mato Grosso', 'tipo_cliente': 'Cooperativa', 'regiao': 'Mato Grosso', 'dias_desde_ultimo': 15, 'ultima_data': '2025-03-10', 'total_pedidos': 12, 'ticket_medio': 204167, 'valor_total': 2450000, 'segmento': 'Campeao'},
+    {'id_cliente': 2, 'nome': 'Agropecuaria Sul LTDA', 'tipo_cliente': 'Empresa', 'regiao': 'Rio Grande do Sul', 'dias_desde_ultimo': 22, 'ultima_data': '2025-03-05', 'total_pedidos': 8, 'ticket_medio': 236250, 'valor_total': 1890000, 'segmento': 'Campeao'},
+    {'id_cliente': 3, 'nome': 'Fazenda Boa Vista', 'tipo_cliente': 'Produtor', 'regiao': 'Goias', 'dias_desde_ultimo': 45, 'ultima_data': '2025-02-10', 'total_pedidos': 6, 'ticket_medio': 206667, 'valor_total': 1240000, 'segmento': 'Fiel'},
+    {'id_cliente': 4, 'nome': 'Cerealista Brasil SA', 'tipo_cliente': 'Empresa', 'regiao': 'Sao Paulo', 'dias_desde_ultimo': 30, 'ultima_data': '2025-02-25', 'total_pedidos': 5, 'ticket_medio': 196000, 'valor_total': 980000, 'segmento': 'Fiel'},
+    {'id_cliente': 5, 'nome': 'Produtores Associados GO', 'tipo_cliente': 'Cooperativa', 'regiao': 'Goias', 'dias_desde_ultimo': 60, 'ultima_data': '2025-01-25', 'total_pedidos': 4, 'ticket_medio': 191250, 'valor_total': 765000, 'segmento': 'Ativo'},
 ]
 
 MOCK_TOP_PRODUTOS = [
@@ -96,6 +96,38 @@ MOCK_TOP_PRODUTOS = [
     {'nome': 'Milho Amarelo Tipo 2', 'total_vendas': 3180000, 'percentual': 75},
     {'nome': 'Cafe Arabica SC-17', 'total_vendas': 2150000, 'percentual': 51},
     {'nome': 'Trigo Soft Red', 'total_vendas': 1680000, 'percentual': 40},
+]
+
+MOCK_CLIENTES = [
+    {'id_cliente': 1, 'nome': 'Cooperativa Agricola MT', 'tipo_cliente': 'Cooperativa', 'regiao': 'Mato Grosso', 'estado': 'MT', 'data_cadastro': '15/01/2020', 'limite_credito': 5000000},
+    {'id_cliente': 2, 'nome': 'Agropecuaria Sul LTDA', 'tipo_cliente': 'Empresa', 'regiao': 'Rio Grande do Sul', 'estado': 'RS', 'data_cadastro': '22/03/2021', 'limite_credito': 3500000},
+    {'id_cliente': 3, 'nome': 'Fazenda Boa Vista', 'tipo_cliente': 'Produtor', 'regiao': 'Goias', 'estado': 'GO', 'data_cadastro': '10/06/2022', 'limite_credito': 800000},
+    {'id_cliente': 4, 'nome': 'Cerealista Brasil SA', 'tipo_cliente': 'Empresa', 'regiao': 'Sao Paulo', 'estado': 'SP', 'data_cadastro': '05/02/2019', 'limite_credito': 8000000},
+    {'id_cliente': 5, 'nome': 'Produtores Associados GO', 'tipo_cliente': 'Cooperativa', 'regiao': 'Goias', 'estado': 'GO', 'data_cadastro': '18/09/2023', 'limite_credito': 2500000},
+]
+
+MOCK_PRODUTOS = [
+    {'id_produto': 1, 'nome': 'Soja Premium (GMO)', 'categoria': 'Grãos', 'subcategoria': 'Soja', 'unidade': 'kg', 'preco_unitario': 85.50},
+    {'id_produto': 2, 'nome': 'Milho Amarelo Tipo 2', 'categoria': 'Grãos', 'subcategoria': 'Milho', 'unidade': 'kg', 'preco_unitario': 42.30},
+    {'id_produto': 3, 'nome': 'Cafe Arabica SC-17', 'categoria': 'Café', 'subcategoria': 'Arábica', 'unidade': 'saca', 'preco_unitario': 1250.00},
+    {'id_produto': 4, 'nome': 'Trigo Soft Red', 'categoria': 'Grãos', 'subcategoria': 'Trigo', 'unidade': 'kg', 'preco_unitario': 58.70},
+    {'id_produto': 5, 'nome': 'Algodão em Caroço', 'categoria': 'Fibras', 'subcategoria': 'Algodão', 'unidade': 'kg', 'preco_unitario': 95.20},
+]
+
+MOCK_PEDIDOS = [
+    {'id_pedido': 1001, 'data_pedido': '15/01/2024', 'data_entrega': '20/01/2024', 'cliente_nome': 'Cooperativa Agricola MT', 'tipo_contrato': 'Spot', 'status': 'Executado', 'valor_total': 125000.00, 'regiao_origem': 'Mato Grosso', 'regiao_destino': 'Santos'},
+    {'id_pedido': 1002, 'data_pedido': '18/01/2024', 'data_entrega': '25/01/2024', 'cliente_nome': 'Agropecuaria Sul LTDA', 'tipo_contrato': 'Futuro', 'status': 'Executado', 'valor_total': 89000.00, 'regiao_origem': 'Rio Grande do Sul', 'regiao_destino': 'Paranagua'},
+    {'id_pedido': 1003, 'data_pedido': '22/01/2024', 'data_entrega': '28/01/2024', 'cliente_nome': 'Fazenda Boa Vista', 'tipo_contrato': 'Spot', 'status': 'Pendente', 'valor_total': 45000.00, 'regiao_origem': 'Goias', 'regiao_destino': 'Santos'},
+    {'id_pedido': 1004, 'data_pedido': '25/01/2024', 'data_entrega': '05/02/2024', 'cliente_nome': 'Cerealista Brasil SA', 'tipo_contrato': 'Exportação', 'status': 'Em Andamento', 'valor_total': 350000.00, 'regiao_origem': 'Mato Grosso', 'regiao_destino': 'China'},
+    {'id_pedido': 1005, 'data_pedido': '01/02/2024', 'data_entrega': '10/02/2024', 'cliente_nome': 'Produtores Associados GO', 'tipo_contrato': 'Spot', 'status': 'Executado', 'valor_total': 67000.00, 'regiao_origem': 'Goias', 'regiao_destino': 'Santos'},
+]
+
+MOCK_ITENS = [
+    {'id_item': 1, 'id_pedido': 1001, 'produto_nome': 'Soja Premium (GMO)', 'quantidade': 1000, 'preco_unitario': 85.50, 'subtotal': 85500.00},
+    {'id_item': 2, 'id_pedido': 1001, 'produto_nome': 'Milho Amarelo Tipo 2', 'quantidade': 500, 'preco_unitario': 42.30, 'subtotal': 21150.00},
+    {'id_item': 3, 'id_pedido': 1002, 'produto_nome': 'Cafe Arabica SC-17', 'quantidade': 50, 'preco_unitario': 1250.00, 'subtotal': 62500.00},
+    {'id_item': 4, 'id_pedido': 1003, 'produto_nome': 'Trigo Soft Red', 'quantidade': 400, 'preco_unitario': 58.70, 'subtotal': 23480.00},
+    {'id_item': 5, 'id_pedido': 1004, 'produto_nome': 'Soja Premium (GMO)', 'quantidade': 2500, 'preco_unitario': 85.50, 'subtotal': 213750.00},
 ]
 
 # ============================================
@@ -283,45 +315,76 @@ def analise_page():
                          charts=charts,
                          db_available=DB_AVAILABLE)
 
+@app.route('/explorer')
+@login_required
+def explorer_page():
+    """Pagina de exploracao de dados - todas as tabelas"""
+    return render_template('explorer.html',
+                         username=session.get('username'),
+                         db_available=DB_AVAILABLE)
+
+@app.route('/compra-compartilhada')
+@login_required
+def compra_compartilhada_page():
+    """Pagina de compra compartilhada entre múltiplos clientes"""
+    if DB_AVAILABLE:
+        clientes = run_query("SELECT id_cliente, nome, tipo_cliente FROM clientes WHERE ativo = TRUE ORDER BY nome")
+        grupos = run_query("SELECT id_grupo, nome_grupo, tipo_grupo FROM grupos_compra WHERE ativo = TRUE")
+    else:
+        clientes = pd.DataFrame(MOCK_CLIENTES)
+        grupos = pd.DataFrame([
+            {'id_grupo': 1, 'nome_grupo': 'Cooperativa Vale do Rio', 'tipo_grupo': 'COOPERATIVA'},
+            {'id_grupo': 2, 'nome_grupo': 'Associação Sul', 'tipo_grupo': 'ASSOCIACAO'}
+        ])
+    
+    return render_template('compra_compartilhada.html',
+                         username=session.get('username'),
+                         clientes=clientes.to_dict('records') if not clientes.empty else MOCK_CLIENTES,
+                         grupos=grupos.to_dict('records') if not grupos.empty else [],
+                         db_available=DB_AVAILABLE)
+
 # ============================================
 # CHATBOT API COM GEMINI
 # ============================================
 
 # Prompt de sistema para o AgroBot
-AGROBOT_SYSTEM_PROMPT = """Você é o AgroBot, um analista de commodities agrícolas sênior da Agromercantil com 15 anos de experiência no mercado. 
+AGROBOT_SYSTEM_PROMPT = """Você é o AgroBot, assistente virtual inteligente da Agromercantil.
 
-Sua personalidade:
-- Conversacional, direto e prático (não seja robótico)
-- Tom profissional mas acolhedor, como um colega experiente
-- Usa linguagem do dia a dia do agronegócio
-- Sempre oferece insights práticos além da resposta básica
+IDENTIDADE E FUNÇÃO:
+- Você é um assistente de análise de dados e BI (Business Intelligence)
+- Sua função é ajudar usuários a consultar e interpretar dados do sistema Agromercantil
+- Você acessa informações sobre: vendas, clientes (RFV), produtos, tendências, anomalias e pedidos
+- Você NÃO é um trader de commodities - você é um analista de dados da plataforma
 
-Contexto da empresa:
-- Agromercantil é uma trader de commodities agrícolas (soja, milho, café, trigo, algodão)
-- Atua há 20 anos no mercado brasileiro
-- Clientes: cooperativas, produtores rurais, agroindústrias
-- Foco nas regiões: Mato Grosso, Paraná, Goiás, Rio Grande do Sul
+SOBRE A AGROMERCANTIL:
+- Plataforma de gestão comercial para trading de commodities agrícolas
+- Monitora pedidos, clientes, anomalias e tendências de vendas
+- Dados disponíveis: faturamento, ticket médio, segmentação de clientes, produtos mais vendidos
 
-Dados atuais do sistema (use quando relevante):
+COMO SE APRESENTAR:
+- SAUDAÇÃO INICIAL OBRIGATÓRIA quando for a primeira mensagem: 
+  "Olá! Sou o AgroBot, seu assistente de análise de dados da Agromercantil. Posso ajudá-lo a consultar informações sobre vendas, clientes, produtos e tendências do seu negócio. O que gostaria de saber?"
+- Nas respostas seguintes: vá direto ao ponto, sem repetir a apresentação
+
+ESTILO DE COMUNICAÇÃO:
+- Profissional, direto e técnico - NUNCA use: "E aí", "Beleza", "Show", "Massa"
+- Tom consultivo de analista de dados
+- Linguagem corporativa, sem gírias
+
+REGRAS:
+1. PRIMEIRA INTERAÇÃO: Use a saudação de apresentação completa acima
+2. NUNCA use expressões informais
+3. NUNCA comece com "Como analista..." ou "De acordo com minha experiência..."
+4. Dê a resposta direta primeiro
+5. Se não souber algo, sugira verificar no dashboard
+6. Mantenha respostas curtas (máximo 2-3 parágrafos)
+7. Termine com convite para continuar
+
+DADOS DO SISTEMA (use quando perguntarem):
 - Faturamento: R$ 5.2M no último ano
 - 847 clientes ativos
 - Ticket médio: R$ 18.450
 - 1.248 contratos
-- Top produto: Soja Premium (45% da receita)
-
-REGRAS IMPORTANTES:
-1. NUNCA comece com "Como analista..." ou "De acordo com minha experiência..." - seja natural
-2. Dê a resposta direta primeiro, depois pergunte se quer uma dica ou insight adicional
-3. Se não souber algo específico do banco, seja honesto e sugere verificar no dashboard
-4. Use exemplos reais do agronegócio quando possível
-5. Mantenha respostas curtas (máximo 3 parágrafos curtos)
-6. Termine com uma pergunta envolvente ou convite para continuar
-
-Exemplo de bom atendimento:
-Usuário: "Qual nosso faturamento?"
-Você: "Estamos com R$ 5.2M este ano, um crescimento legal de 12% comparado ao ano passado. 
-
-A soja continua puxando a fila com quase metade desse valor. Quer que eu te mostre como isso está distribuído por região? Posso te dar uma dica sobre onde estão as maiores oportunidades."
 """
 
 @app.route('/api/chat', methods=['POST'])
@@ -341,25 +404,21 @@ def chat_api():
         # Preparar contexto com dados atuais
         context = get_context_data()
         
-        # Criar prompt completo
-        full_prompt = f"""{AGROBOT_SYSTEM_PROMPT}
-
-Dados atuais do sistema:
+        # Criar prompt do usuário (apenas a pergunta)
+        user_prompt = f"""Dados atuais do sistema:
 {context}
 
-Histórico da conversa:
-Usuário: {user_message}
+Pergunta do usuário: {user_message}"""
 
-Responda como o AgroBot:"""
-
-        # Gerar resposta com Gemini (nova API)
+        # Gerar resposta com Gemini 2.5 Flash usando system instruction
         response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=full_prompt,
+            model='gemini-2.5-flash',
+            contents=user_prompt,
             config=types.GenerateContentConfig(
-                temperature=0.7,
-                max_output_tokens=300,
-                top_p=0.9
+                system_instruction=AGROBOT_SYSTEM_PROMPT,
+                temperature=0.3,
+                max_output_tokens=400,
+                top_p=0.8
             )
         )
         
@@ -426,6 +485,392 @@ def api_inativos():
         return jsonify([])
     df = clientes_inativos()
     return jsonify(df.to_dict('records'))
+
+# ============================================
+# APIs - CORREÇÃO DE ANOMALIAS
+# ============================================
+@app.route('/api/anomalias/corrigir/<int:pedido_id>', methods=['POST'])
+@login_required
+def api_corrigir_anomalia(pedido_id):
+    """Corrige uma anomalia específica automaticamente"""
+    if not DB_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Banco não disponível'})
+    
+    try:
+        data = request.json or {}
+        usuario = session.get('username', 'SISTEMA')
+        motivo = data.get('motivo', 'Correção manual via interface')
+        
+        # Executar função de correção no banco
+        result = run_query("""
+            SELECT * FROM corrigir_anomalia(:pedido_id, :usuario, :motivo)
+        """, {'pedido_id': pedido_id, 'usuario': usuario, 'motivo': motivo})
+        
+        if not result.empty:
+            return jsonify({
+                'success': True,
+                'status': result.iloc[0]['status'],
+                'valor_anterior': float(result.iloc[0]['valor_anterior']),
+                'valor_novo': float(result.iloc[0]['valor_novo'])
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Pedido não encontrado'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/anomalias/corrigir-todas', methods=['POST'])
+@login_required
+def api_corrigir_todas():
+    """Corrige todas as anomalias pendentes"""
+    if not DB_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Banco não disponível'})
+    
+    try:
+        # Buscar todas as anomalias pendentes
+        anomalias = run_query("""
+            SELECT id_pedido FROM vw_anomalias_completas 
+            WHERE status_correcao = 'PENDENTE'
+        """)
+        
+        corrigidas = []
+        erros = []
+        
+        for _, row in anomalias.iterrows():
+            try:
+                result = run_query("""
+                    SELECT * FROM corrigir_anomalia(:pedido_id, :usuario, 'Correção em lote')
+                """, {
+                    'pedido_id': row['id_pedido'],
+                    'usuario': session.get('username', 'SISTEMA')
+                })
+                corrigidas.append(row['id_pedido'])
+            except Exception as e:
+                erros.append({'pedido': row['id_pedido'], 'erro': str(e)})
+        
+        return jsonify({
+            'success': True,
+            'total_corrigidas': len(corrigidas),
+            'total_erros': len(erros),
+            'corrigidas': corrigidas,
+            'erros': erros
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/anomalias/historico/<int:pedido_id>')
+@login_required
+def api_historico_correcoes(pedido_id):
+    """Retorna histórico de correções de um pedido"""
+    if not DB_AVAILABLE:
+        return jsonify([])
+    
+    df = run_query("""
+        SELECT 
+            id_correcao,
+            campo_corrigido,
+            valor_anterior,
+            valor_novo,
+            tipo_correcao,
+            usuario_correcao,
+            motivo_correcao,
+            TO_CHAR(data_correcao, 'DD/MM/YYYY HH24:MI') as data_formatada
+        FROM log_correcoes
+        WHERE id_pedido = :pedido_id
+        ORDER BY data_correcao DESC
+    """, {'pedido_id': pedido_id})
+    
+    return jsonify(df.to_dict('records'))
+
+# ============================================
+# APIs - COMPRA COMPARTILHADA
+# ============================================
+@app.route('/api/compra-compartilhada/grupos')
+@login_required
+def api_listar_grupos():
+    """Lista todos os grupos de compra"""
+    if not DB_AVAILABLE:
+        return jsonify([])
+    
+    df = run_query("""
+        SELECT g.*, 
+               c.nome as representante,
+               (SELECT COUNT(*) FROM cliente_grupo cg WHERE cg.id_grupo = g.id_grupo) as total_membros
+        FROM grupos_compra g
+        LEFT JOIN clientes c ON g.representante_id = c.id_cliente
+        WHERE g.ativo = TRUE
+        ORDER BY g.nome_grupo
+    """)
+    return jsonify(df.to_dict('records'))
+
+@app.route('/api/compra-compartilhada/grupo/<int:grupo_id>/membros')
+@login_required
+def api_grupo_membros(grupo_id):
+    """Lista membros de um grupo"""
+    if not DB_AVAILABLE:
+        return jsonify([])
+    
+    df = run_query("""
+        SELECT 
+            c.id_cliente,
+            c.nome,
+            c.tipo_cliente,
+            c.regiao,
+            cg.percentual_participacao,
+            cg.data_entrada
+        FROM cliente_grupo cg
+        JOIN clientes c ON cg.id_cliente = c.id_cliente
+        WHERE cg.id_grupo = :grupo_id AND cg.ativo = TRUE
+        ORDER BY cg.percentual_participacao DESC
+    """, {'grupo_id': grupo_id})
+    return jsonify(df.to_dict('records'))
+
+@app.route('/api/compra-compartilhada/criar', methods=['POST'])
+@login_required
+def api_criar_pedido_compartilhado():
+    """Cria um novo pedido compartilhado"""
+    if not DB_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Banco não disponível'})
+    
+    try:
+        data = request.json
+        
+        # Preparar JSON de proprietários
+        proprietarios = []
+        for p in data.get('proprietarios', []):
+            proprietarios.append({
+                'cliente_id': p['cliente_id'],
+                'percentual': p['percentual'],
+                'tipo': p.get('tipo', 'COMPRADOR')
+            })
+        
+        # Executar função do banco
+        result = run_query("""
+            SELECT criar_pedido_compartilhado(
+                :data_pedido, :data_entrega, :tipo_contrato,
+                :regiao_origem, :regiao_destino, :proprietarios::jsonb
+            ) as pedido_id
+        """, {
+            'data_pedido': data['data_pedido'],
+            'data_entrega': data['data_entrega'],
+            'tipo_contrato': data['tipo_contrato'],
+            'regiao_origem': data['regiao_origem'],
+            'regiao_destino': data['regiao_destino'],
+            'proprietarios': json.dumps(proprietarios)
+        })
+        
+        if not result.empty:
+            pedido_id = int(result.iloc[0]['pedido_id'])
+            
+            # Inserir itens do pedido
+            for item in data.get('itens', []):
+                run_query("""
+                    INSERT INTO itens_pedido (id_pedido, id_produto, quantidade, preco_unitario, subtotal)
+                    VALUES (:pedido_id, :produto_id, :quantidade, :preco_unitario, :subtotal)
+                """, {
+                    'pedido_id': pedido_id,
+                    'produto_id': item['produto_id'],
+                    'quantidade': item['quantidade'],
+                    'preco_unitario': item['preco_unitario'],
+                    'subtotal': item['quantidade'] * item['preco_unitario']
+                })
+            
+            # Atualizar valor total do pedido
+            run_query("""
+                UPDATE pedidos 
+                SET valor_total = (SELECT SUM(subtotal) FROM itens_pedido WHERE id_pedido = :pedido_id)
+                WHERE id_pedido = :pedido_id
+            """, {'pedido_id': pedido_id})
+            
+            return jsonify({
+                'success': True,
+                'pedido_id': pedido_id,
+                'message': f'Pedido compartilhado #{pedido_id} criado com sucesso'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Erro ao criar pedido'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/compra-compartilhada/pedido/<int:pedido_id>')
+@login_required
+def api_pedido_compartilhado_detalhe(pedido_id):
+    """Retorna detalhes de um pedido compartilhado"""
+    if not DB_AVAILABLE:
+        return jsonify({})
+    
+    # Dados do pedido
+    pedido = run_query("""
+        SELECT * FROM vw_pedidos_completo WHERE id_pedido = :pedido_id
+    """, {'pedido_id': pedido_id})
+    
+    # Co-proprietários
+    coproprietarios = run_query("""
+        SELECT 
+            pc.*,
+            c.nome as cliente_nome,
+            c.tipo_cliente
+        FROM pedido_coproprietario pc
+        JOIN clientes c ON pc.id_cliente = c.id_cliente
+        WHERE pc.id_pedido = :pedido_id
+    """, {'pedido_id': pedido_id})
+    
+    # Itens
+    itens = run_query("""
+        SELECT 
+            i.*,
+            p.nome as produto_nome
+        FROM itens_pedido i
+        JOIN produtos p ON i.id_produto = p.id_produto
+        WHERE i.id_pedido = :pedido_id
+    """, {'pedido_id': pedido_id})
+    
+    return jsonify({
+        'pedido': pedido.to_dict('records')[0] if not pedido.empty else None,
+        'coproprietarios': coproprietarios.to_dict('records'),
+        'itens': itens.to_dict('records')
+    })
+
+# ============================================
+# APIs - EXPLORER DE DADOS
+# ============================================
+@app.route('/api/explorer/clientes')
+@login_required
+def api_explorer_clientes():
+    """Retorna todos os clientes para DataTable"""
+    if not DB_AVAILABLE:
+        return jsonify({'data': MOCK_CLIENTES})
+    
+    df = run_query("""
+        SELECT id_cliente, nome, tipo_cliente, regiao, estado, 
+               TO_CHAR(data_cadastro, 'DD/MM/YYYY') as data_cadastro,
+               COALESCE(limite_credito, 0) as limite_credito
+        FROM clientes 
+        ORDER BY id_cliente
+    """)
+    return jsonify({'data': df.to_dict('records')})
+
+@app.route('/api/explorer/produtos')
+@login_required
+def api_explorer_produtos():
+    """Retorna todos os produtos para DataTable"""
+    if not DB_AVAILABLE:
+        return jsonify({'data': MOCK_PRODUTOS})
+    
+    df = run_query("""
+        SELECT id_produto, nome, categoria, subcategoria, unidade, 
+               COALESCE(preco_unitario, 0) as preco_unitario
+        FROM produtos 
+        ORDER BY id_produto
+    """)
+    return jsonify({'data': df.to_dict('records')})
+
+@app.route('/api/explorer/pedidos')
+@login_required
+def api_explorer_pedidos():
+    """Retorna todos os pedidos para DataTable com filtros opcionais"""
+    inicio = request.args.get('inicio')
+    fim = request.args.get('fim')
+    
+    if not DB_AVAILABLE:
+        return jsonify({'data': MOCK_PEDIDOS})
+    
+    where_clause = ""
+    params = {}
+    if inicio:
+        where_clause += " WHERE p.data_pedido >= :inicio"
+        params['inicio'] = inicio
+    if fim:
+        where_clause += " AND" if inicio else " WHERE"
+        where_clause += " p.data_pedido <= :fim"
+        params['fim'] = fim
+    
+    df = run_query(f"""
+        SELECT p.id_pedido, 
+               TO_CHAR(p.data_pedido, 'DD/MM/YYYY') as data_pedido,
+               TO_CHAR(p.data_entrega, 'DD/MM/YYYY') as data_entrega,
+               c.nome as cliente_nome,
+               p.tipo_contrato,
+               p.status,
+               COALESCE(p.valor_total, 0) as valor_total,
+               p.regiao_origem,
+               p.regiao_destino
+        FROM pedidos p
+        JOIN clientes c ON p.id_cliente = c.id_cliente
+        {where_clause}
+        ORDER BY p.data_pedido DESC
+    """, params)
+    return jsonify({'data': df.to_dict('records')})
+
+@app.route('/api/explorer/itens')
+@login_required
+def api_explorer_itens():
+    """Retorna todos os itens de pedido para DataTable"""
+    if not DB_AVAILABLE:
+        return jsonify({'data': MOCK_ITENS})
+    
+    df = run_query("""
+        SELECT i.id_item, i.id_pedido, p.nome as produto_nome,
+               i.quantidade, 
+               COALESCE(i.preco_unitario, 0) as preco_unitario,
+               COALESCE(i.subtotal, 0) as subtotal
+        FROM itens_pedido i
+        JOIN produtos p ON i.id_produto = p.id_produto
+        ORDER BY i.id_item DESC
+        LIMIT 5000
+    """)
+    return jsonify({'data': df.to_dict('records')})
+
+@app.route('/api/explorer/resumo')
+@login_required
+def api_explorer_resumo():
+    """Retorna resumo estatístico para dashboard"""
+    if not DB_AVAILABLE:
+        return jsonify({
+            'total_clientes': 847,
+            'total_produtos': 25,
+            'total_pedidos': 1248,
+            'faturamento_total': 5200000,
+            'status_labels': ['Executado', 'Pendente', 'Cancelado', 'Em Andamento'],
+            'status_values': [850, 250, 100, 48],
+            'top_clientes_nomes': ['Cooperativa Agricola MT', 'Agropecuaria Sul LTDA', 'Fazenda Boa Vista'],
+            'top_clientes_valores': [2450000, 1890000, 1240000]
+        })
+    
+    # Totais
+    clientes = run_query("SELECT COUNT(*) as total FROM clientes")
+    produtos = run_query("SELECT COUNT(*) as total FROM produtos")
+    pedidos = run_query("SELECT COUNT(*) as total FROM pedidos")
+    faturamento = run_query("SELECT COALESCE(SUM(valor_total), 0) as total FROM pedidos WHERE status != 'Cancelado'")
+    
+    # Pedidos por status
+    status_data = run_query("""
+        SELECT status, COUNT(*) as total 
+        FROM pedidos 
+        GROUP BY status 
+        ORDER BY total DESC
+    """)
+    
+    # Top 10 clientes
+    top_clientes = run_query("""
+        SELECT c.nome, SUM(p.valor_total) as total
+        FROM pedidos p
+        JOIN clientes c ON p.id_cliente = c.id_cliente
+        WHERE p.status != 'Cancelado'
+        GROUP BY c.id_cliente, c.nome
+        ORDER BY total DESC
+        LIMIT 10
+    """)
+    
+    return jsonify({
+        'total_clientes': int(clientes['total'].iloc[0]) if not clientes.empty else 0,
+        'total_produtos': int(produtos['total'].iloc[0]) if not produtos.empty else 0,
+        'total_pedidos': int(pedidos['total'].iloc[0]) if not pedidos.empty else 0,
+        'faturamento_total': float(faturamento['total'].iloc[0]) if not faturamento.empty else 0,
+        'status_labels': status_data['status'].tolist() if not status_data.empty else [],
+        'status_values': status_data['total'].tolist() if not status_data.empty else [],
+        'top_clientes_nomes': top_clientes['nome'].tolist() if not top_clientes.empty else [],
+        'top_clientes_valores': [float(v) for v in top_clientes['total'].tolist()] if not top_clientes.empty else []
+    })
 
 # ============================================
 # FUNCOES DE DADOS

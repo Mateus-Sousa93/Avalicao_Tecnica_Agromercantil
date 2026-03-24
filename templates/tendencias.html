@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Tendências | Agromercantil Analytics</title>
+    <title>Análise de Tendências | Agromercantil Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -16,19 +16,12 @@
                         "primary": "#112800",
                         "secondary": "#436900",
                         "tertiary": "#F58220",
-                        "error": "#ba1a1a",
-                        "on-primary": "#ffffff",
-                        "primary-container": "#cbedab",
-                        "secondary-container": "#b9f467",
-                        "tertiary-container": "#ffddb4",
                         "surface": "#fafaf5",
                         "on-surface": "#1a1c19",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container-low": "#f4f4ef",
                         "surface-container": "#eeeee9",
-                        "surface-container-high": "#e8e8e3",
-                        "outline": "#74796c",
-                        "outline-variant": "#c4c8ba"
+                        "surface-container-low": "#f4f4ef",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#74796c"
                     },
                     fontFamily: {
                         "headline": ["Manrope", "sans-serif"],
@@ -42,14 +35,23 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fafaf5; }
         .font-headline { font-family: 'Manrope', sans-serif; }
-        .font-label { font-family: 'Work Sans', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 10px; }
-        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f4f4ef; }
+        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 3px; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); }
         .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
         .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
+        
+        /* Tabs */
+        .tab-btn { @apply px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all border-b-2 border-transparent; }
+        .tab-btn.active { @apply text-primary border-primary bg-surface-container-low; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Range slider */
+        input[type=range] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #c4c8ba; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #112800; cursor: pointer; }
     </style>
 </head>
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
@@ -64,178 +66,384 @@
             <nav class="flex items-center h-full space-x-1">
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
                 <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
+                <div class="relative group">
+                    <button class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1 flex items-center gap-1">
+                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
+                    </div>
+                </div>
             </nav>
         </div>
         <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-lg">person</span>
-                <span class="font-medium">{{ username }}</span>
-            </div>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-sm hover:bg-error/5" title="Sair">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
+            <span class="text-sm text-on-surface-variant">{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
+    <main class="flex-1 flex flex-col overflow-hidden">
         
-        <!-- Filters -->
-        <section class="flex-none flex justify-between items-center bg-surface-container-lowest elevation-1 p-3">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-on-surface-variant text-sm">calendar_today</span>
-                <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Período:</span>
-                <div class="flex gap-1 ml-2">
-                    <button class="px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-on-primary">Último ano</button>
-                    <button class="px-3 py-1.5 text-xs font-medium rounded-md bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-colors">6 meses</button>
-                    <button class="px-3 py-1.5 text-xs font-medium rounded-md bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-colors">30 dias</button>
+        <!-- Page Header -->
+        <div class="bg-surface-container-lowest elevation-1 px-6 py-3">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold font-headline text-on-surface">Análise de Tendências</h1>
+                    <p class="text-sm text-on-surface-variant mt-1">Acompanhe a evolução temporal dos negócios</p>
+                </div>
+                <div class="flex gap-3">
+                    <select id="filtro-ano" onchange="carregarDados()" class="px-3 py-2 border border-outline-variant rounded-lg text-sm bg-white">
+                        <option value="">Todos os Anos</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                    <select id="filtro-periodo" onchange="carregarDados()" class="px-3 py-2 border border-outline-variant rounded-lg text-sm bg-white">
+                        <option value="">Todo o Período</option>
+                        <option value="Q1">1º Trimestre</option>
+                        <option value="Q2">2º Trimestre</option>
+                        <option value="Q3">3º Trimestre</option>
+                        <option value="Q4">4º Trimestre</option>
+                    </select>
+                    <button onclick="compararPeriodos()" class="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors text-sm">
+                        <span class="material-symbols-outlined text-sm">compare_arrows</span> Comparar
+                    </button>
                 </div>
             </div>
-            <button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md transition-colors">
-                <span class="material-symbols-outlined text-sm">download</span>
-                Exportar CSV
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-4 gap-4 px-6 py-4 bg-surface">
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-primary">
+                <p class="text-xs text-on-surface-variant uppercase">Vendas Período</p>
+                <p class="text-2xl font-bold" id="kpi-vendas">-</p>
+                <p class="text-xs mt-1" id="var-vendas"></p>
+            </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-secondary">
+                <p class="text-xs text-on-surface-variant uppercase">Contratos</p>
+                <p class="text-2xl font-bold" id="kpi-contratos">-</p>
+                <p class="text-xs mt-1" id="var-contratos"></p>
+            </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-tertiary">
+                <p class="text-xs text-on-surface-variant uppercase">Ticket Médio</p>
+                <p class="text-2xl font-bold" id="kpi-ticket">-</p>
+                <p class="text-xs mt-1" id="var-ticket"></p>
+            </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-outline">
+                <p class="text-xs text-on-surface-variant uppercase">Crescimento MoM</p>
+                <p class="text-2xl font-bold" id="kpi-crescimento">-</p>
+                <p class="text-xs mt-1">vs mês anterior</p>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-outline-variant/20 bg-surface-container-low px-6">
+            <button class="tab-btn active" onclick="switchTab('geral')">
+                <span class="material-symbols-outlined text-sm mr-1">trending_up</span> Visão Geral
             </button>
-        </section>
+            <button class="tab-btn" onclick="switchTab('comparativo')">
+                <span class="material-symbols-outlined text-sm mr-1">stacked_line_chart</span> Comparativo Anual
+            </button>
+            <button class="tab-btn" onclick="switchTab('safras')">
+                <span class="material-symbols-outlined text-sm mr-1">agriculture</span> Por Safra
+            </button>
+            <button class="tab-btn" onclick="switchTab('tabela')">
+                <span class="material-symbols-outlined text-sm mr-1">table_chart</span> Dados Detalhados
+            </button>
+        </div>
 
-        <!-- Main Grid -->
-        <section class="flex-1 grid grid-cols-5 gap-4 min-h-0">
-            <!-- Left: Chart (65%) -->
-            <div class="col-span-3 bg-surface-container-lowest elevation-1 flex flex-col p-5">
-                <div class="flex justify-between items-end mb-3">
-                    <div>
-                        <h2 class="text-lg font-bold font-headline text-on-surface">Evolução de Vendas</h2>
-                        <p class="text-xs text-on-surface-variant">Faturamento mensal e taxa de crescimento</p>
+        <!-- Tab Contents -->
+        <div class="flex-1 overflow-auto p-6">
+            
+            <!-- Geral Tab -->
+            <div id="tab-geral" class="tab-content active">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold">Evolução Mensal de Vendas</h3>
+                        <div class="flex gap-2">
+                            <button onclick="toggleSerie('vendas')" class="px-3 py-1 text-xs rounded-full bg-primary text-white">Vendas</button>
+                            <button onclick="toggleSerie('contratos')" class="px-3 py-1 text-xs rounded-full bg-secondary text-white">Contratos</button>
+                        </div>
                     </div>
-                    <div class="flex gap-4 text-[11px]">
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-primary"></span>
-                            <span class="text-on-surface">Vendas</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-tertiary"></span>
-                            <span class="text-on-surface-variant">Crescimento %</span>
-                        </div>
+                    <div id="chart-evolucao" style="height: 400px;"></div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Crescimento Mensal (%)</h3>
+                        <div id="chart-crescimento"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Acumulado Anual</h3>
+                        <div id="chart-acumulado"></div>
                     </div>
                 </div>
-                <div class="flex-1 relative" id="chart-tendencias"></div>
             </div>
 
-            <!-- Right: Metrics Table (35%) -->
-            <div class="col-span-2 bg-surface-container-lowest elevation-1 flex flex-col p-5 overflow-hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold font-headline text-on-surface">Métricas Mensais</h2>
-                    <span class="text-xs font-semibold text-secondary">+12.4% acumulado</span>
+            <!-- Comparativo Tab -->
+            <div id="tab-comparativo" class="tab-content">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5 mb-6">
+                    <h3 class="font-bold mb-4">Comparativo 2023 vs 2024</h3>
+                    <div id="chart-comparativo"></div>
                 </div>
-                <div class="flex-1 overflow-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="sticky top-0 bg-surface-container-lowest text-on-surface-variant border-b border-outline-variant/20">
-                            <tr>
-                                <th class="pb-2 font-semibold font-label">Mês</th>
-                                <th class="pb-2 font-semibold font-label text-right">Vendas</th>
-                                <th class="pb-2 font-semibold font-label text-right">Contratos</th>
-                                <th class="pb-2 font-semibold font-label text-right">Cresc.</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-outline-variant/10">
-                            {% for t in tendencias %}
-                            <tr class="hover:bg-surface-container-low transition-colors">
-                                <td class="py-2.5 font-medium text-on-surface">{{ t.mes_ano }}</td>
-                                <td class="py-2.5 text-right font-body">R$ {{ "{:,.1f}".format(t.vendas/1e6).replace(".", "_").replace(",", ".").replace("_", ",") }}M</td>
-                                <td class="py-2.5 text-right font-body">{{ t.contratos }}</td>
-                                <td class="py-2.5 text-right font-body">
-                                    {% if t.crescimento > 0 %}
-                                    <span class="text-secondary">+{{ "{:.1f}".format(t.crescimento) }}%</span>
-                                    {% elif t.crescimento < 0 %}
-                                    <span class="text-error">{{ "{:.1f}".format(t.crescimento) }}%</span>
-                                    {% else %}
-                                    <span class="text-on-surface-variant">-</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <!-- Mock data when empty -->
-                            <tr class="hover:bg-surface-container-low transition-colors"><td class="py-2.5">Jan/24</td><td class="py-2.5 text-right">R$ 2,1M</td><td class="py-2.5 text-right">89</td><td class="py-2.5 text-right">-</td></tr>
-                            <tr class="hover:bg-surface-container-low transition-colors"><td class="py-2.5">Fev/24</td><td class="py-2.5 text-right">R$ 2,3M</td><td class="py-2.5 text-right">95</td><td class="py-2.5 text-right text-secondary">+9.5%</td></tr>
-                            <tr class="hover:bg-surface-container-low transition-colors"><td class="py-2.5">Mar/24</td><td class="py-2.5 text-right">R$ 2,8M</td><td class="py-2.5 text-right">112</td><td class="py-2.5 text-right text-secondary">+21.7%</td></tr>
-                            <tr class="hover:bg-surface-container-low transition-colors"><td class="py-2.5">Abr/24</td><td class="py-2.5 text-right">R$ 3,2M</td><td class="py-2.5 text-right">128</td><td class="py-2.5 text-right text-secondary">+14.3%</td></tr>
-                            <tr class="hover:bg-surface-container-low transition-colors"><td class="py-2.5">Mai/24</td><td class="py-2.5 text-right">R$ 3,5M</td><td class="py-2.5 text-right">135</td><td class="py-2.5 text-right text-secondary">+9.4%</td></tr>
-                            <tr class="hover:bg-surface-container-low transition-colors"><td class="py-2.5">Jun/24</td><td class="py-2.5 text-right">R$ 3,8M</td><td class="py-2.5 text-right">142</td><td class="py-2.5 text-right text-secondary">+8.6%</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl text-center">
+                        <p class="text-sm text-on-surface-variant">Crescimento YoY</p>
+                        <p class="text-3xl font-bold text-secondary" id="comp-yoy">+15.3%</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl text-center">
+                        <p class="text-sm text-on-surface-variant">Melhor Mês</p>
+                        <p class="text-3xl font-bold text-primary" id="comp-melhor">Março</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl text-center">
+                        <p class="text-sm text-on-surface-variant">Projeção Anual</p>
+                        <p class="text-3xl font-bold text-tertiary" id="comp-proj">R$ 62M</p>
+                    </div>
                 </div>
             </div>
-        </section>
+
+            <!-- Safras Tab -->
+            <div id="tab-safras" class="tab-content">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Volume por Safra</h3>
+                        <div id="chart-safras"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Preço Médio por Safra</h3>
+                        <div id="chart-precos"></div>
+                    </div>
+                </div>
+                <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl mt-6">
+                    <h3 class="font-bold mb-4">Calendário de Safras</h3>
+                    <div class="grid grid-cols-12 gap-2 text-center text-sm">
+                        <div class="p-3 rounded bg-secondary text-white">Jan<br><small>Colheita Soja</small></div>
+                        <div class="p-3 rounded bg-secondary text-white">Fev<br><small>Colheita Soja</small></div>
+                        <div class="p-3 rounded bg-secondary text-white">Mar<br><small>Colheita Milho</small></div>
+                        <div class="p-3 rounded bg-tertiary text-white">Abr<br><small>Plantio Algodão</small></div>
+                        <div class="p-3 rounded bg-tertiary text-white">Mai<br><small>Plantio Algodão</small></div>
+                        <div class="p-3 rounded bg-primary text-white">Jun<br><small>Férias</small></div>
+                        <div class="p-3 rounded bg-primary text-white">Jul<br><small>Férias</small></div>
+                        <div class="p-3 rounded bg-tertiary text-white">Ago<br><small>Plantio Soja</small></div>
+                        <div class="p-3 rounded bg-tertiary text-white">Set<br><small>Plantio Soja</small></div>
+                        <div class="p-3 rounded bg-tertiary text-white">Out<br><small>Plantio Milho</small></div>
+                        <div class="p-3 rounded bg-primary text-white">Nov<br><small>Floração</small></div>
+                        <div class="p-3 rounded bg-primary text-white">Dez<br><small>Monitoramento</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela Tab -->
+            <div id="tab-tabela" class="tab-content">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <div class="overflow-auto" style="max-height: 500px;">
+                        <table class="w-full text-sm" id="tabela-dados">
+                            <thead class="sticky top-0 bg-surface-container-low">
+                                <tr class="border-b-2 border-primary">
+                                    <th class="px-4 py-3 text-left">Mês/Ano</th>
+                                    <th class="px-4 py-3 text-right">Vendas (R$)</th>
+                                    <th class="px-4 py-3 text-right">Contratos</th>
+                                    <th class="px-4 py-3 text-right">Crescimento (%)</th>
+                                    <th class="px-4 py-3 text-right">Acumulado (R$)</th>
+                                    <th class="px-4 py-3 text-center">Tendência</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-dados"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="h-6 flex items-center justify-between px-6 bg-surface text-[10px] text-outline font-label uppercase tracking-widest border-t border-outline-variant/10">
-        <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full {% if db_available %}bg-secondary{% else %}bg-tertiary{% endif %}"></span>
-            <span>{% if db_available %}Dados em tempo real{% else %}Modo demonstração{% endif %}</span>
-        </div>
-        <span>Agromercantil Analytics v2.4.0</span>
-    </footer>
-
+    <!-- Scripts -->
     <script>
-        // Gráfico combinado: Barras (vendas) + Linha (crescimento)
-        var trace1 = {
-            x: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-            y: [2.1, 2.3, 2.8, 3.2, 3.5, 3.8, 4.1, 4.5, 4.8, 5.1, 5.3, 5.2],
-            type: 'bar',
-            name: 'Vendas',
-            marker: { color: '#112800' },
-            yaxis: 'y'
-        };
+        let tendenciasData = [];
 
-        var trace2 = {
-            x: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-            y: [0, 9.5, 21.7, 14.3, 9.4, 8.6, 7.9, 9.8, 6.7, 6.3, 3.9, -1.9],
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Crescimento %',
-            line: { color: '#F58220', width: 3 },
-            marker: { size: 6 },
-            yaxis: 'y2'
-        };
+        $(document).ready(function() {
+            carregarDados();
+        });
 
-        var layout = {
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            margin: { l: 50, r: 50, t: 20, b: 40 },
-            yaxis: {
-                title: 'Vendas (R$ M)',
-                tickprefix: 'R$ ',
-                gridcolor: 'rgba(116, 121, 108, 0.1)',
-                tickfont: { size: 10 }
-            },
-            yaxis2: {
-                overlaying: 'y',
-                side: 'right',
-                title: 'Crescimento %',
-                ticksuffix: '%',
-                tickfont: { size: 10 },
-                gridcolor: 'rgba(116, 121, 108, 0.05)'
-            },
-            xaxis: {
-                gridcolor: 'rgba(116, 121, 108, 0.1)',
-                tickfont: { size: 10 }
-            },
-            legend: {
-                orientation: 'h',
-                yanchor: 'bottom',
-                y: 1.02,
-                xanchor: 'right',
-                x: 1,
-                font: { size: 10 }
-            },
-            hovermode: 'x unified',
-            font: { family: 'Inter, sans-serif' }
-        };
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'comparativo') renderComparativo();
+            if (tabName === 'safras') renderSafras();
+            if (tabName === 'tabela') renderTabela();
+        }
 
-        Plotly.newPlot('chart-tendencias', [trace1, trace2], layout, {responsive: true, displayModeBar: false});
+        function carregarDados() {
+            fetch('/api/tendencias')
+                .then(r => r.json())
+                .then(data => {
+                    tendenciasData = data;
+                    atualizarKPIs(data);
+                    renderEvolucao(data);
+                    renderCrescimento(data);
+                    renderAcumulado(data);
+                });
+        }
+
+        function atualizarKPIs(data) {
+            if (!data || data.length === 0) return;
+            
+            const totalVendas = data.reduce((a, b) => a + (b.vendas || 0), 0);
+            const totalContratos = data.reduce((a, b) => a + (b.contratos || 0), 0);
+            const ticketMedio = totalVendas / totalContratos;
+            const ultimoCrescimento = data[0]?.crescimento || 0;
+            
+            document.getElementById('kpi-vendas').textContent = 'R$ ' + (totalVendas/1e6).toFixed(1) + 'M';
+            document.getElementById('kpi-contratos').textContent = totalContratos.toLocaleString();
+            document.getElementById('kpi-ticket').textContent = 'R$ ' + ticketMedio.toLocaleString('pt-BR');
+            document.getElementById('kpi-crescimento').textContent = (ultimoCrescimento > 0 ? '+' : '') + ultimoCrescimento.toFixed(1) + '%';
+            document.getElementById('kpi-crescimento').className = 'text-2xl font-bold ' + (ultimoCrescimento >= 0 ? 'text-secondary' : 'text-error');
+        }
+
+        function renderEvolucao(data) {
+            const meses = data.map(d => d.mes_ano).reverse();
+            const vendas = data.map(d => d.vendas/1e6).reverse();
+            const contratos = data.map(d => d.contratos).reverse();
+            
+            Plotly.newPlot('chart-evolucao', [
+                {
+                    x: meses, y: vendas, type: 'bar', name: 'Vendas (R$ M)',
+                    marker: { color: '#112800' }
+                },
+                {
+                    x: meses, y: contratos, type: 'scatter', name: 'Contratos',
+                    yaxis: 'y2', mode: 'lines+markers',
+                    line: { color: '#F58220', width: 2 }, marker: { size: 6 }
+                }
+            ], {
+                yaxis: { title: 'Vendas (R$ M)', tickprefix: 'R$ ' },
+                yaxis2: { title: 'Contratos', overlaying: 'y', side: 'right' },
+                xaxis: { title: '' },
+                margin: { t: 20, b: 40, l: 60, r: 60 },
+                legend: { orientation: 'h', y: 1.15 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            }, {responsive: true});
+        }
+
+        function renderCrescimento(data) {
+            const meses = data.map(d => d.mes_ano).reverse();
+            const crescimento = data.map(d => d.crescimento || 0).reverse();
+            
+            const colors = crescimento.map(v => v >= 0 ? '#436900' : '#ba1a1a');
+            
+            Plotly.newPlot('chart-crescimento', [{
+                x: meses, y: crescimento, type: 'bar',
+                marker: { color: colors },
+                text: crescimento.map(v => v.toFixed(1) + '%'),
+                textposition: 'outside'
+            }], {
+                yaxis: { title: 'Crescimento (%)', ticksuffix: '%' },
+                margin: { t: 20, b: 40, l: 50, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            }, {responsive: true});
+        }
+
+        function renderAcumulado(data) {
+            const meses = data.map(d => d.mes_ano).reverse();
+            let acumulado = 0;
+            const valores = data.map(d => {
+                acumulado += d.vendas || 0;
+                return acumulado / 1e6;
+            }).reverse();
+            
+            Plotly.newPlot('chart-acumulado', [{
+                x: meses, y: valores, type: 'scatter', mode: 'lines+markers',
+                fill: 'tozeroy', line: { color: '#436900', width: 2 },
+                marker: { size: 6, color: '#436900' },
+                fillcolor: 'rgba(67, 105, 0, 0.1)'
+            }], {
+                yaxis: { title: 'Acumulado (R$ M)', tickprefix: 'R$ ' },
+                margin: { t: 20, b: 40, l: 60, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            }, {responsive: true});
+        }
+
+        function renderComparativo() {
+            // Mock data para comparativo 2023 vs 2024
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const dados2023 = [1.8, 2.0, 2.5, 2.8, 3.0, 3.2, 3.5, 3.8, 4.0, 4.2, 4.5, 4.8];
+            const dados2024 = [2.1, 2.3, 2.8, 3.2, 3.5, 3.8, 4.1, 4.5, 4.8, 5.1, 5.3, 5.2];
+            
+            Plotly.newPlot('chart-comparativo', [
+                { x: meses, y: dados2023, type: 'bar', name: '2023', marker: { color: '#74796c' } },
+                { x: meses, y: dados2024, type: 'bar', name: '2024', marker: { color: '#112800' } }
+            ], {
+                barmode: 'group',
+                yaxis: { title: 'Vendas (R$ M)', tickprefix: 'R$ ' },
+                margin: { t: 20, b: 40, l: 60, r: 20 },
+                legend: { orientation: 'h', y: 1.15 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            }, {responsive: true});
+        }
+
+        function renderSafras() {
+            // Gráfico de safras
+            Plotly.newPlot('chart-safras', [{
+                x: ['Safra 22/23', 'Safra 23/24', 'Safra 24/25'],
+                y: [45, 52, 58],
+                type: 'bar', marker: { color: ['#74796c', '#436900', '#112800'] }
+            }], {
+                yaxis: { title: 'Volume (mil ton)' },
+                margin: { t: 20, b: 40, l: 50, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            }, {responsive: true});
+
+            Plotly.newPlot('chart-precos', [{
+                x: ['Safra 22/23', 'Safra 23/24', 'Safra 24/25'],
+                y: [85, 92, 88],
+                type: 'scatter', mode: 'lines+markers',
+                line: { color: '#F58220', width: 3 },
+                marker: { size: 10 }
+            }], {
+                yaxis: { title: 'Preço Médio (R$)' },
+                margin: { t: 20, b: 40, l: 50, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
+            }, {responsive: true});
+        }
+
+        function renderTabela() {
+            const tbody = document.getElementById('tbody-dados');
+            let acumulado = 0;
+            
+            tbody.innerHTML = tendenciasData.map((d, i) => {
+                acumulado += d.vendas || 0;
+                const tendencia = d.crescimento > 5 ? '↗️' : d.crescimento < -5 ? '↘️' : '➡️';
+                const cor = d.crescimento > 0 ? 'text-secondary' : d.crescimento < 0 ? 'text-error' : 'text-outline';
+                
+                return `
+                    <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low">
+                        <td class="px-4 py-3 font-medium">${d.mes_ano}</td>
+                        <td class="px-4 py-3 text-right">R$ ${(d.vendas/1e6).toFixed(2)}M</td>
+                        <td class="px-4 py-3 text-right">${d.contratos}</td>
+                        <td class="px-4 py-3 text-right ${cor}">${d.crescimento ? d.crescimento.toFixed(1) + '%' : '-'}</td>
+                        <td class="px-4 py-3 text-right font-medium">R$ ${(acumulado/1e6).toFixed(2)}M</td>
+                        <td class="px-4 py-3 text-center">${tendencia}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function compararPeriodos() {
+            alert('Função de comparação de períodos será implementada');
+        }
+
+        function toggleSerie(serie) {
+            // Toggle visibilidade das séries no gráfico
+        }
     </script>
 
     <!-- Chat Widget -->

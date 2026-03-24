@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Compra Compartilhada | Agromercantil Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#112800",
+                        "secondary": "#436900",
+                        "tertiary": "#F58220",
+                        "error": "#ba1a1a",
+                        "surface": "#fafaf5",
+                        "on-surface": "#1a1c19",
+                        "surface-container": "#eeeee9",
+                        "surface-container-low": "#f4f4ef",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#74796c"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Work Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fafaf5; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f4f4ef; }
+        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 3px; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); }
+        .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
+        .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
+        
+        .tab-btn { @apply px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-secondary hover:bg-secondary/5 transition-all border-b-2 border-transparent; }
+        .tab-btn.active { @apply text-secondary border-secondary bg-secondary/5; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Step wizard */
+        .step { display: none; }
+        .step.active { display: block; }
+        .step-indicator { @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all; }
+        .step-indicator.active { @apply bg-secondary text-white; }
+        .step-indicator.completed { @apply bg-primary text-white; }
+        .step-indicator.pending { @apply bg-surface-container text-on-surface-variant; }
+        
+        /* Range slider */
+        input[type=range] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #c4c8ba; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #436900; cursor: pointer; }
+        
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; }
+        .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow: auto; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
+
+    <!-- Header -->
+    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-secondary/20">
+        <div class="flex items-center space-x-8 h-full">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">eco</span>
+                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
+            </div>
+            <nav class="flex items-center h-full space-x-1">
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
+                <a class="font-headline text-sm tracking-tight text-secondary border-b-2 border-secondary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('compra_compartilhada_page') }}">Compra Compartilhada</a>
+                <div class="relative group">
+                    <button class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1 flex items-center gap-1">
+                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-on-surface-variant">{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        
+        <!-- Page Header -->
+        <div class="bg-secondary/5 elevation-1 px-6 py-3 border-b border-secondary/10">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-secondary text-3xl">groups</span>
+                    <div>
+                        <h1 class="text-2xl font-bold font-headline text-secondary">Compra Compartilhada</h1>
+                        <p class="text-sm text-on-surface-variant mt-1">Pedidos compartilhados entre cooperativas, associações e grupos de produtores</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="mostrarSchema()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm">
+                        <span class="material-symbols-outlined text-sm">database</span> Ver Schema
+                    </button>
+                    <button onclick="novoPedidoCompartilhado()" class="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors text-sm">
+                        <span class="material-symbols-outlined text-sm">add</span> Novo Pedido Compartilhado
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-secondary/20 bg-secondary/5 px-6">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">
+                <span class="material-symbols-outlined text-sm mr-1">dashboard</span> Dashboard
+            </button>
+            <button class="tab-btn" onclick="switchTab('pedidos')">
+                <span class="material-symbols-outlined text-sm mr-1">receipt_long</span> Pedidos Compartilhados
+            </button>
+            <button class="tab-btn" onclick="switchTab('grupos')">
+                <span class="material-symbols-outlined text-sm mr-1">corporate_fare</span> Grupos de Compra
+            </button>
+            <button class="tab-btn" onclick="switchTab('demo')">
+                <span class="material-symbols-outlined text-sm mr-1">smart_toy</span> Demonstração
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="flex-1 overflow-auto p-6">
+            
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-secondary">
+                        <p class="text-xs text-on-surface-variant uppercase">Total Pedidos Compartilhados</p>
+                        <p class="text-2xl font-bold" id="kpi-total">24</p>
+                        <p class="text-xs text-secondary">↗ +12% este mês</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-primary">
+                        <p class="text-xs text-on-surface-variant uppercase">Grupos Ativos</p>
+                        <p class="text-2xl font-bold" id="kpi-grupos">8</p>
+                        <p class="text-xs text-on-surface-variant">3 cooperativas, 5 associações</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-tertiary">
+                        <p class="text-xs text-on-surface-variant uppercase">Volume Total</p>
+                        <p class="text-2xl font-bold" id="kpi-volume">R$ 4.2M</p>
+                        <p class="text-xs text-tertiary">18% do faturamento</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-outline">
+                        <p class="text-xs text-on-surface-variant uppercase">Ticket Médio</p>
+                        <p class="text-2xl font-bold" id="kpi-ticket">R$ 175k</p>
+                        <p class="text-xs text-on-surface-variant">vs R$ 45k individual</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Pedidos por Tipo de Grupo</h3>
+                        <div id="chart-tipos"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Evolução Mensal</h3>
+                        <div id="chart-evolucao"></div>
+                    </div>
+                </div>
+
+                <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl mt-6">
+                    <h3 class="font-bold mb-4">Benefícios da Compra Compartilhada</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="p-4 bg-secondary/5 rounded-lg text-center">
+                            <span class="material-symbols-outlined text-secondary text-3xl">trending_down</span>
+                            <p class="font-bold mt-2">-15%</p>
+                            <p class="text-xs text-on-surface-variant">Custo logístico</p>
+                        </div>
+                        <div class="p-4 bg-primary/5 rounded-lg text-center">
+                            <span class="material-symbols-outlined text-primary text-3xl">payments</span>
+                            <p class="font-bold mt-2">+8%</p>
+                            <p class="text-xs text-on-surface-variant">Desconto volume</p>
+                        </div>
+                        <div class="p-4 bg-tertiary/5 rounded-lg text-center">
+                            <span class="material-symbols-outlined text-tertiary text-3xl">schedule</span>
+                            <p class="font-bold mt-2">-30%</p>
+                            <p class="text-xs text-on-surface-variant">Tempo processo</p>
+                        </div>
+                        <div class="p-4 bg-outline/10 rounded-lg text-center">
+                            <span class="material-symbols-outlined text-outline text-3xl">eco</span>
+                            <p class="font-bold mt-2">-20%</p>
+                            <p class="text-xs text-on-surface-variant">Emissão CO₂</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pedidos Tab -->
+            <div id="tab-pedidos" class="tab-content">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold">Pedidos Compartilhados Recentes</h3>
+                        <div class="flex gap-2">
+                            <select class="px-3 py-1 border border-outline-variant rounded text-sm">
+                                <option value="">Todos os Grupos</option>
+                                <option value="cooperativa">Cooperativas</option>
+                                <option value="associacao">Associações</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="overflow-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-surface-container-low">
+                                <tr class="text-left border-b-2 border-secondary">
+                                    <th class="px-4 py-3">ID</th>
+                                    <th class="px-4 py-3">Grupo/Clientes</th>
+                                    <th class="px-4 py-3">Data</th>
+                                    <th class="px-4 py-3 text-right">Valor Total</th>
+                                    <th class="px-4 py-3 text-center">Co-proprietários</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-pedidos"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grupos Tab -->
+            <div id="tab-grupos" class="tab-content">
+                <div class="grid grid-cols-2 gap-6">
+                    {% for grupo in grupos %}
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="px-2 py-0.5 rounded text-xs bg-secondary text-white">{{ grupo.tipo_grupo }}</span>
+                                <h3 class="font-bold text-lg mt-2">{{ grupo.nome_grupo }}</h3>
+                            </div>
+                            <span class="material-symbols-outlined text-secondary">groups</span>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-on-surface-variant">Membros:</span>
+                                <span class="font-medium">3 produtores</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-on-surface-variant">Volume anual:</span>
+                                <span class="font-medium">R$ 1.2M</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-on-surface-variant">Pedidos:</span>
+                                <span class="font-medium">8 este ano</span>
+                            </div>
+                        </div>
+                        <button onclick="verDetalhesGrupo({{ grupo.id_grupo }})" class="w-full py-2 border border-secondary text-secondary rounded-lg hover:bg-secondary hover:text-white transition-colors text-sm">
+                            Ver Detalhes
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Demo Tab - Wizard Interativo -->
+            <div id="tab-demo" class="tab-content">
+                <div class="max-w-4xl mx-auto">
+                    <h3 class="text-xl font-bold mb-6 text-center">Demonstração: Criar Pedido Compartilhado</h3>
+                    
+                    <!-- Step Indicators -->
+                    <div class="flex justify-center items-center gap-4 mb-8">
+                        <div class="flex items-center gap-2">
+                            <div class="step-indicator active" id="step-1-ind">1</div>
+                            <span class="text-sm">Grupo</span>
+                        </div>
+                        <div class="w-16 h-0.5 bg-surface-container"></div>
+                        <div class="flex items-center gap-2">
+                            <div class="step-indicator pending" id="step-2-ind">2</div>
+                            <span class="text-sm">Participação</span>
+                        </div>
+                        <div class="w-16 h-0.5 bg-surface-container"></div>
+                        <div class="flex items-center gap-2">
+                            <div class="step-indicator pending" id="step-3-ind">3</div>
+                            <span class="text-sm">Itens</span>
+                        </div>
+                        <div class="w-16 h-0.5 bg-surface-container"></div>
+                        <div class="flex items-center gap-2">
+                            <div class="step-indicator pending" id="step-4-ind">4</div>
+                            <span class="text-sm">Confirmação</span>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Selecionar Grupo -->
+                    <div id="step-1" class="step active bg-surface-container-lowest elevation-1 p-6 rounded-xl">
+                        <h4 class="font-bold mb-4">Passo 1: Selecione o Grupo de Compra</h4>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            {% for grupo in grupos %}
+                            <div class="p-4 border-2 border-outline-variant rounded-lg cursor-pointer hover:border-secondary transition-colors grupo-card" onclick="selecionarGrupo({{ grupo.id_grupo }}, '{{ grupo.nome_grupo }}')">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-secondary">groups</span>
+                                    <div>
+                                        <p class="font-medium">{{ grupo.nome_grupo }}</p>
+                                        <p class="text-xs text-on-surface-variant">{{ grupo.tipo_grupo }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="flex justify-end">
+                            <button onclick="nextStep(2)" class="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors">
+                                Próximo →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Definir Participação -->
+                    <div id="step-2" class="step bg-surface-container-lowest elevation-1 p-6 rounded-xl">
+                        <h4 class="font-bold mb-4">Passo 2: Definir Participação dos Membros</h4>
+                        <p class="text-sm text-on-surface-variant mb-4">Distribua 100% entre os co-proprietários:</p>
+                        
+                        <div class="space-y-4 mb-6" id="participacao-container">
+                            <!-- Membros serão carregados dinamicamente -->
+                        </div>
+                        
+                        <div class="bg-surface-container p-4 rounded-lg mb-6">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Total Distribuído:</span>
+                                <span id="total-participacao" class="text-2xl font-bold text-secondary">0%</span>
+                            </div>
+                            <div class="w-full h-2 bg-surface-container-low rounded-full mt-2 overflow-hidden">
+                                <div id="barra-participacao" class="h-full bg-secondary transition-all" style="width: 0%"></div>
+                            </div>
+                            <p id="msg-erro-participacao" class="text-xs text-error mt-2 hidden">⚠️ O total deve ser exatamente 100%</p>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <button onclick="prevStep(1)" class="px-6 py-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors">
+                                ← Anterior
+                            </button>
+                            <button onclick="nextStep(3)" class="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors">
+                                Próximo →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Adicionar Itens -->
+                    <div id="step-3" class="step bg-surface-container-lowest elevation-1 p-6 rounded-xl">
+                        <h4 class="font-bold mb-4">Passo 3: Adicionar Itens ao Pedido</h4>
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="p-3 border border-outline-variant rounded-lg cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-colors" onclick="adicionarItem(1, 'Soja Premium', 85.50)">
+                                <p class="font-medium text-sm">Soja Premium</p>
+                                <p class="text-xs text-on-surface-variant">R$ 85,50 / kg</p>
+                            </div>
+                            <div class="p-3 border border-outline-variant rounded-lg cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-colors" onclick="adicionarItem(2, 'Milho Amarelo', 42.30)">
+                                <p class="font-medium text-sm">Milho Amarelo</p>
+                                <p class="text-xs text-on-surface-variant">R$ 42,30 / kg</p>
+                            </div>
+                            <div class="p-3 border border-outline-variant rounded-lg cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-colors" onclick="adicionarItem(3, 'Café Arábica', 1250.00)">
+                                <p class="font-medium text-sm">Café Arábica</p>
+                                <p class="text-xs text-on-surface-variant">R$ 1.250,00 / saca</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-surface-container p-4 rounded-lg mb-6">
+                            <h5 class="font-medium mb-2">Itens Adicionados:</h5>
+                            <div id="itens-pedido" class="space-y-2">
+                                <p class="text-sm text-on-surface-variant italic">Nenhum item adicionado ainda</p>
+                            </div>
+                            <div class="border-t border-outline-variant mt-3 pt-3">
+                                <div class="flex justify-between font-bold">
+                                    <span>Total:</span>
+                                    <span id="total-pedido">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <button onclick="prevStep(2)" class="px-6 py-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors">
+                                ← Anterior
+                            </button>
+                            <button onclick="nextStep(4)" class="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors">
+                                Próximo →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Confirmação -->
+                    <div id="step-4" class="step bg-surface-container-lowest elevation-1 p-6 rounded-xl">
+                        <h4 class="font-bold mb-4">Passo 4: Confirmação e Resumo</h4>
+                        
+                        <div class="space-y-4 mb-6">
+                            <div class="bg-surface-container p-4 rounded-lg">
+                                <h5 class="font-medium text-secondary mb-2">Co-proprietários e Participação</h5>
+                                <div id="resumo-participacao" class="space-y-2">
+                                    <!-- Resumo será preenchido via JS -->
+                                </div>
+                            </div>
+                            
+                            <div class="bg-surface-container p-4 rounded-lg">
+                                <h5 class="font-medium text-secondary mb-2">Divisão do Valor</h5>
+                                <div id="resumo-valores" class="space-y-2">
+                                    <!-- Valores serão preenchidos via JS -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-primary/5 border border-primary/20 p-4 rounded-lg mb-6">
+                            <h5 class="font-medium text-primary mb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">info</span>
+                                O que acontece agora?
+                            </h5>
+                            <ul class="text-sm space-y-1 text-on-surface-variant">
+                                <li>• O pedido será criado com múltiplos proprietários</li>
+                                <li>• Cada proprietário receberá notificação</li>
+                                <li>• O valor será dividido conforme participação</li>
+                                <li>• Faturamento separado para cada CNPJ/CPF</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <button onclick="prevStep(3)" class="px-6 py-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors">
+                                ← Anterior
+                            </button>
+                            <button onclick="finalizarPedido()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">check</span>
+                                Criar Pedido Compartilhado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal de Schema -->
+    <div id="modal-schema" class="modal-overlay">
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Schema - Compra Compartilhada</h2>
+                <button onclick="fecharSchema()" class="p-1 hover:bg-surface-container rounded">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm overflow-auto" style="max-height: 60vh;">
+                <div>
+                    <h3 class="font-bold text-secondary mb-2">1. Tabela: grupos_compra</h3>
+                    <pre class="bg-surface-container-low p-3 rounded text-xs">CREATE TABLE grupos_compra (
+    id_grupo SERIAL PRIMARY KEY,
+    nome_grupo VARCHAR(200) NOT NULL,
+    tipo_grupo VARCHAR(50) CHECK (tipo_grupo IN 
+        ('COOPERATIVA', 'ASSOCIACAO', 'CONSORCIO', 'GRUPO_INFORMAL')),
+    representante_id INTEGER REFERENCES clientes(id_cliente),
+    data_criacao DATE DEFAULT CURRENT_DATE,
+    ativo BOOLEAN DEFAULT TRUE
+);</pre>
+                </div>
+                <div>
+                    <h3 class="font-bold text-secondary mb-2">2. Tabela: cliente_grupo</h3>
+                    <pre class="bg-surface-container-low p-3 rounded text-xs">CREATE TABLE cliente_grupo (
+    id_cliente INTEGER REFERENCES clientes(id_cliente),
+    id_grupo INTEGER REFERENCES grupos_compra(id_grupo),
+    percentual_participacao NUMERIC(5,2) 
+        CHECK (percentual_participacao > 0 AND percentual_participacao <= 100),
+    data_entrada DATE DEFAULT CURRENT_DATE,
+    ativo BOOLEAN DEFAULT TRUE,
+    PRIMARY KEY (id_cliente, id_grupo)
+);</pre>
+                </div>
+                <div>
+                    <h3 class="font-bold text-secondary mb-2">3. Tabela: pedido_coproprietario</h3>
+                    <pre class="bg-surface-container-low p-3 rounded text-xs">CREATE TABLE pedido_coproprietario (
+    id_pedido INTEGER REFERENCES pedidos(id_pedido),
+    id_cliente INTEGER REFERENCES clientes(id_cliente),
+    percentual_propriedade NUMERIC(5,2) NOT NULL 
+        CHECK (percentual_propriedade > 0 AND percentual_propriedade <= 100),
+    valor_proporcional NUMERIC(15,2) NOT NULL,
+    tipo_participacao VARCHAR(50) CHECK (tipo_participacao IN 
+        ('COMPRADOR', 'FINANCIADOR', 'REPRESENTANTE')),
+    PRIMARY KEY (id_pedido, id_cliente)
+);</pre>
+                </div>
+                <div>
+                    <h3 class="font-bold text-secondary mb-2">4. Função: criar_pedido_compartilhado()</h3>
+                    <pre class="bg-surface-container-low p-3 rounded text-xs">CREATE OR REPLACE FUNCTION criar_pedido_compartilhado(
+    p_data_pedido DATE,
+    p_data_entrega DATE,
+    p_tipo_contrato VARCHAR(50),
+    p_regiao_origem VARCHAR(100),
+    p_regiao_destino VARCHAR(100),
+    p_proprietarios JSONB
+) RETURNS INTEGER AS $$
+DECLARE
+    v_id_pedido INTEGER;
+    v_proprietario RECORD;
+BEGIN
+    -- Validar que percentuais somam 100
+    IF (SELECT COALESCE(SUM((value->>'percentual')::NUMERIC), 0) 
+        FROM jsonb_array_elements(p_proprietarios)) != 100 THEN
+        RAISE EXCEPTION 'Percentuais devem somar 100%%';
+    END IF;
+    
+    -- Criar pedido
+    INSERT INTO pedidos (...) VALUES (...)
+    RETURNING id_pedido INTO v_id_pedido;
+    
+    -- Inserir co-proprietários
+    FOR v_proprietario IN ... LOOP
+        INSERT INTO pedido_coproprietario (...)
+        VALUES (...);
+    END LOOP;
+    
+    RETURN v_id_pedido;
+END;
+$$ LANGUAGE plpgsql;</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        let currentStep = 1;
+        let pedidoData = {
+            grupoId: null,
+            grupoNome: '',
+            participacao: {},
+            itens: [],
+            total: 0
+        };
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'dashboard') renderDashboard();
+            if (tabName === 'pedidos') carregarPedidos();
+        }
+
+        $(document).ready(function() {
+            renderDashboard();
+            carregarPedidos();
+        });
+
+        function renderDashboard() {
+            // Gráfico de tipos
+            Plotly.newPlot('chart-tipos', [{
+                values: [12, 8, 4], labels: ['Cooperativas', 'Associações', 'Consórcios'], type: 'pie', hole: 0.4,
+                marker: { colors: ['#436900', '#112800', '#F58220'] }
+            }], {margin: {t: 10, b: 10, l: 10, r: 10}}, {responsive: true});
+
+            // Gráfico de evolução
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+            const valores = [320, 380, 450, 420, 510, 580];
+            Plotly.newPlot('chart-evolucao', [{
+                x: meses, y: valores, type: 'bar',
+                marker: { color: '#436900' }
+            }], {margin: {t: 10, b: 40, l: 50, r: 10}}, {responsive: true});
+        }
+
+        function carregarPedidos() {
+            const pedidos = [
+                { id: 2001, grupo: 'Cooperativa Vale do Rio', data: '15/01/2024', valor: 450000, coprop: 3, status: 'Executado' },
+                { id: 2002, grupo: 'Associação Sul', data: '22/01/2024', valor: 280000, coprop: 2, status: 'Pendente' },
+                { id: 2003, grupo: 'Cooperativa Central', data: '28/01/2024', valor: 620000, coprop: 5, status: 'Em Andamento' },
+                { id: 2004, grupo: 'Grupo dos Produtores', data: '05/02/2024', valor: 180000, coprop: 2, status: 'Pendente' },
+            ];
+            
+            const tbody = document.getElementById('tbody-pedidos');
+            tbody.innerHTML = pedidos.map(p => `
+                <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low">
+                    <td class="px-4 py-3 font-medium">#${p.id}</td>
+                    <td class="px-4 py-3">${p.grupo}</td>
+                    <td class="px-4 py-3">${p.data}</td>
+                    <td class="px-4 py-3 text-right font-medium">R$ ${(p.valor/1e3).toFixed(0)}k</td>
+                    <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs">${p.coprop} membros</span></td>
+                    <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs ${p.status === 'Executado' ? 'bg-secondary text-white' : p.status === 'Pendente' ? 'bg-tertiary text-white' : 'bg-primary text-white'}">${p.status}</span></td>
+                    <td class="px-4 py-3"><button onclick="verDetalhesPedido(${p.id})" class="text-secondary hover:text-primary text-sm">Ver →</button></td>
+                </tr>
+            `).join('');
+        }
+
+        // Wizard functions
+        function selecionarGrupo(id, nome) {
+            pedidoData.grupoId = id;
+            pedidoData.grupoNome = nome;
+            document.querySelectorAll('.grupo-card').forEach(el => el.classList.remove('border-secondary', 'bg-secondary/5'));
+            event.currentTarget.classList.add('border-secondary', 'bg-secondary/5');
+            
+            // Carregar membros do grupo
+            carregarMembrosGrupo(id);
+        }
+
+        function carregarMembrosGrupo(grupoId) {
+            // Mock de membros
+            const membros = [
+                { id: 1, nome: 'Fazenda Boa Vista', tipo: 'Produtor' },
+                { id: 2, nome: 'Agropecuaria Sul LTDA', tipo: 'Empresa' },
+                { id: 3, nome: 'Cooperativa Regional', tipo: 'Cooperativa' }
+            ];
+            
+            const container = document.getElementById('participacao-container');
+            container.innerHTML = membros.map((m, i) => `
+                <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                        <p class="font-medium">${m.nome}</p>
+                        <p class="text-xs text-on-surface-variant">${m.tipo}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="range" min="0" max="100" value="33" 
+                            class="w-32 participacao-slider" 
+                            data-cliente="${m.id}" 
+                            onchange="atualizarParticipacao()">
+                        <span class="w-16 text-right font-medium participacao-valor">33%</span>
+                    </div>
+                    <select class="px-2 py-1 border border-outline-variant rounded text-xs">
+                        <option>COMPRADOR</option>
+                        <option>FINANCIADOR</option>
+                        <option>REPRESENTANTE</option>
+                    </select>
+                </div>
+            `).join('');
+            
+            atualizarParticipacao();
+        }
+
+        function atualizarParticipacao() {
+            let total = 0;
+            document.querySelectorAll('.participacao-slider').forEach(slider => {
+                total += parseInt(slider.value);
+                slider.nextElementSibling.textContent = slider.value + '%';
+            });
+            
+            document.getElementById('total-participacao').textContent = total + '%';
+            document.getElementById('barra-participacao').style.width = Math.min(total, 100) + '%';
+            
+            if (total !== 100) {
+                document.getElementById('msg-erro-participacao').classList.remove('hidden');
+                document.getElementById('total-participacao').classList.add('text-error');
+                document.getElementById('total-participacao').classList.remove('text-secondary');
+            } else {
+                document.getElementById('msg-erro-participacao').classList.add('hidden');
+                document.getElementById('total-participacao').classList.remove('text-error');
+                document.getElementById('total-participacao').classList.add('text-secondary');
+            }
+        }
+
+        function adicionarItem(id, nome, preco) {
+            const qtd = prompt(`Quantidade de ${nome}?`, "100");
+            if (!qtd || isNaN(qtd)) return;
+            
+            const item = {
+                id: id,
+                nome: nome,
+                preco: preco,
+                quantidade: parseInt(qtd),
+                subtotal: preco * parseInt(qtd)
+            };
+            
+            pedidoData.itens.push(item);
+            atualizarItens();
+        }
+
+        function atualizarItens() {
+            const container = document.getElementById('itens-pedido');
+            if (pedidoData.itens.length === 0) {
+                container.innerHTML = '<p class="text-sm text-on-surface-variant italic">Nenhum item adicionado ainda</p>';
+                return;
+            }
+            
+            container.innerHTML = pedidoData.itens.map((item, i) => `
+                <div class="flex justify-between items-center py-2 border-b border-outline-variant/20">
+                    <div>
+                        <p class="font-medium">${item.nome}</p>
+                        <p class="text-xs text-on-surface-variant">${item.quantidade} x R$ ${item.preco.toFixed(2)}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-medium">R$ ${item.subtotal.toLocaleString('pt-BR')}</p>
+                        <button onclick="removerItem(${i})" class="text-xs text-error hover:underline">Remover</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            pedidoData.total = pedidoData.itens.reduce((a, b) => a + b.subtotal, 0);
+            document.getElementById('total-pedido').textContent = 'R$ ' + pedidoData.total.toLocaleString('pt-BR');
+        }
+
+        function removerItem(index) {
+            pedidoData.itens.splice(index, 1);
+            atualizarItens();
+        }
+
+        function nextStep(step) {
+            // Validar step atual
+            if (currentStep === 1 && !pedidoData.grupoId) {
+                alert('Selecione um grupo primeiro');
+                return;
+            }
+            
+            if (currentStep === 2) {
+                const total = Array.from(document.querySelectorAll('.participacao-slider')).reduce((a, b) => a + parseInt(b.value), 0);
+                if (total !== 100) {
+                    alert('A soma das participações deve ser 100%');
+                    return;
+                }
+            }
+            
+            // Atualizar indicadores
+            document.getElementById(`step-${currentStep}-ind`).classList.remove('active');
+            document.getElementById(`step-${currentStep}-ind`).classList.add('completed');
+            document.getElementById(`step-${step}-ind`).classList.remove('pending');
+            document.getElementById(`step-${step}-ind`).classList.add('active');
+            
+            // Esconder step atual, mostrar próximo
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            document.getElementById(`step-${step}`).classList.add('active');
+            
+            currentStep = step;
+            
+            if (step === 4) {
+                prepararResumo();
+            }
+        }
+
+        function prevStep(step) {
+            document.getElementById(`step-${currentStep}-ind`).classList.remove('active');
+            document.getElementById(`step-${currentStep}-ind`).classList.add('pending');
+            document.getElementById(`step-${step}-ind`).classList.remove('completed');
+            document.getElementById(`step-${step}-ind`).classList.add('active');
+            
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            document.getElementById(`step-${step}`).classList.add('active');
+            
+            currentStep = step;
+        }
+
+        function prepararResumo() {
+            // Resumo participação
+            const container = document.getElementById('resumo-participacao');
+            container.innerHTML = '';
+            document.querySelectorAll('.participacao-slider').forEach(slider => {
+                const nome = slider.closest('div').previousElementSibling.querySelector('p').textContent;
+                const pct = slider.value;
+                container.innerHTML += `
+                    <div class="flex justify-between text-sm">
+                        <span>${nome}</span>
+                        <span class="font-medium">${pct}%</span>
+                    </div>
+                `;
+            });
+            
+            // Resumo valores
+            const valoresContainer = document.getElementById('resumo-valores');
+            valoresContainer.innerHTML = '';
+            document.querySelectorAll('.participacao-slider').forEach(slider => {
+                const nome = slider.closest('div').previousElementSibling.querySelector('p').textContent;
+                const pct = parseInt(slider.value);
+                const valor = (pedidoData.total * pct / 100);
+                valoresContainer.innerHTML += `
+                    <div class="flex justify-between text-sm">
+                        <span>${nome} (${pct}%)</span>
+                        <span class="font-medium">R$ ${valor.toLocaleString('pt-BR')}</span>
+                    </div>
+                `;
+            });
+        }
+
+        function finalizarPedido() {
+            alert(`✅ Pedido compartilhado criado com sucesso!\n\nGrupo: ${pedidoData.grupoNome}\nValor Total: R$ ${pedidoData.total.toLocaleString('pt-BR')}\nCo-proprietários: ${document.querySelectorAll('.participacao-slider').length}\n\nTodos os participantes serão notificados.`);
+        }
+
+        function mostrarSchema() {
+            document.getElementById('modal-schema').classList.add('active');
+        }
+
+        function fecharSchema() {
+            document.getElementById('modal-schema').classList.remove('active');
+        }
+
+        function novoPedidoCompartilhado() {
+            switchTab('demo');
+            // Reset wizard
+            currentStep = 1;
+            document.querySelectorAll('.step-indicator').forEach((el, i) => {
+                el.classList.remove('active', 'completed');
+                el.classList.add(i === 0 ? 'active' : 'pending');
+            });
+            document.querySelectorAll('.step').forEach((el, i) => {
+                el.classList.toggle('active', i === 0);
+            });
+        }
+
+        function verDetalhesGrupo(id) {
+            alert('Detalhes do grupo ' + id);
+        }
+
+        function verDetalhesPedido(id) {
+            alert('Detalhes do pedido ' + id);
+        }
+    </script>
+
+    <!-- Chat Widget -->
+    <script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
+</body>
+</html>

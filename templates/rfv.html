@@ -3,10 +3,13 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>RFV | Agromercantil Analytics</title>
+    <title>Análise RFV | Agromercantil Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script>
         tailwind.config = {
@@ -14,27 +17,15 @@
                 extend: {
                     colors: {
                         "primary": "#112800",
-                        "primary-dark": "#143d31",
                         "secondary": "#436900",
                         "tertiary": "#F58220",
-                        "on-primary": "#ffffff",
-                        "primary-container": "#cbedab",
-                        "on-primary-container": "#0c2000",
-                        "secondary-container": "#b9f467",
-                        "on-secondary-container": "#112000",
-                        "tertiary-container": "#ffddb4",
-                        "on-tertiary-container": "#291800",
                         "error": "#ba1a1a",
                         "surface": "#fafaf5",
                         "on-surface": "#1a1c19",
-                        "surface-variant": "#e4e2e1",
-                        "on-surface-variant": "#44483e",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container-low": "#f4f4ef",
                         "surface-container": "#eeeee9",
-                        "surface-container-high": "#e8e8e3",
-                        "outline": "#74796c",
-                        "outline-variant": "#c4c8ba"
+                        "surface-container-low": "#f4f4ef",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#74796c"
                     },
                     fontFamily: {
                         "headline": ["Manrope", "sans-serif"],
@@ -48,18 +39,36 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fafaf5; }
         .font-headline { font-family: 'Manrope', sans-serif; }
-        .font-label { font-family: 'Work Sans', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 10px; }
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f4f4ef; }
+        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 3px; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); }
         .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
         .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
+        
+        /* DataTables */
+        .dataTables_wrapper { font-size: 13px; }
+        .dataTables_length, .dataTables_filter { margin-bottom: 15px; }
+        .dataTables_length select, .dataTables_filter input {
+            padding: 6px 12px; border: 1px solid #c4c8ba; border-radius: 6px; background: white;
+        }
+        table.dataTable thead th {
+            background-color: #f4f4ef; color: #112800; font-weight: 600; border-bottom: 2px solid #112800;
+        }
+        table.dataTable tbody tr:hover { background-color: #f4f4ef; }
+        
+        /* Badge styles */
+        .badge-campeao { background: #112800; color: white; }
+        .badge-fiel { background: #436900; color: white; }
+        .badge-ativo { background: #F58220; color: white; }
+        .badge-risco { background: #ba1a1a; color: white; }
+        
+        /* Tabs */
+        .tab-btn { @apply px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all border-b-2 border-transparent; }
+        .tab-btn.active { @apply text-primary border-primary bg-surface-container-low; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
@@ -74,140 +83,461 @@
             <nav class="flex items-center h-full space-x-1">
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
                 <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
+                <div class="relative group">
+                    <button class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1 flex items-center gap-1">
+                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
+                    </div>
+                </div>
             </nav>
         </div>
         <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-lg">person</span>
-                <span class="font-medium">{{ username }}</span>
-            </div>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-sm hover:bg-error/5" title="Sair">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
+            <span class="text-sm text-on-surface-variant">{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
+    <main class="flex-1 flex flex-col overflow-hidden">
         
+        <!-- Page Header -->
+        <div class="bg-surface-container-lowest elevation-1 px-6 py-3">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold font-headline text-on-surface">Análise RFV</h1>
+                    <p class="text-sm text-on-surface-variant mt-1">Recência, Frequência e Valor dos clientes</p>
+                </div>
+                <div class="flex gap-2">
+                    <select id="filtro-segmento" onchange="filtrarTabela()" class="px-3 py-2 border border-outline-variant rounded-lg text-sm bg-white">
+                        <option value="">Todos os Segmentos</option>
+                        <option value="Campeao">Campeão</option>
+                        <option value="Fiel">Fiel</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Em Risco">Em Risco</option>
+                    </select>
+                    <select id="filtro-regiao" onchange="filtrarTabela()" class="px-3 py-2 border border-outline-variant rounded-lg text-sm bg-white">
+                        <option value="">Todas as Regiões</option>
+                        <option value="Mato Grosso">Mato Grosso</option>
+                        <option value="Goias">Goiás</option>
+                        <option value="Parana">Paraná</option>
+                        <option value="Rio Grande do Sul">Rio Grande do Sul</option>
+                    </select>
+                    <button onclick="exportarExcel()" class="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors text-sm">
+                        <span class="material-symbols-outlined text-sm">download</span> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI Cards -->
-        <section class="grid grid-cols-4 gap-4 flex-none">
-            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #112800;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Total Clientes</p>
-                <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos.values()|sum if segmentos else 847 }}</span>
-                </div>
+        <div class="grid grid-cols-5 gap-4 px-6 py-4 bg-surface">
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-primary">
+                <p class="text-xs text-on-surface-variant uppercase">Total Clientes</p>
+                <p class="text-2xl font-bold" id="kpi-total">-</p>
             </div>
-            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #436900;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Campeões</p>
-                <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos.Campeao if segmentos else 45 }}</span>
-                    <span class="text-[11px] font-medium text-secondary">+5.2%</span>
-                </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-badge-campeao">
+                <p class="text-xs text-on-surface-variant uppercase">Campeões</p>
+                <p class="text-2xl font-bold" id="kpi-campeao">-</p>
             </div>
-            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #F58220;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Fiéis</p>
-                <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos.Fiel if segmentos else 128 }}</span>
-                    <span class="text-[11px] font-medium text-secondary">+8.1%</span>
-                </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-badge-fiel">
+                <p class="text-xs text-on-surface-variant uppercase">Fiéis</p>
+                <p class="text-2xl font-bold" id="kpi-fiel">-</p>
             </div>
-            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #ba1a1a;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Em Risco</p>
-                <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos['Em Risco'] if segmentos else 67 }}</span>
-                    <span class="text-[11px] font-medium text-error">-2.4%</span>
-                </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-badge-ativo">
+                <p class="text-xs text-on-surface-variant uppercase">Ativos</p>
+                <p class="text-2xl font-bold" id="kpi-ativo">-</p>
             </div>
-        </section>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-badge-risco">
+                <p class="text-xs text-on-surface-variant uppercase">Em Risco</p>
+                <p class="text-2xl font-bold" id="kpi-risco">-</p>
+            </div>
+        </div>
 
-        <!-- Main Grid -->
-        <section class="flex-1 grid grid-cols-5 gap-4 min-h-0">
-            <!-- Left: Chart (40%) -->
-            <div class="col-span-2 bg-surface-container-lowest elevation-1 flex flex-col p-5">
-                <h2 class="text-lg font-bold font-headline text-on-surface mb-4">Distribuição por Segmento</h2>
-                <div class="flex-1 relative" id="chart-segmentos"></div>
-            </div>
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-outline-variant/20 bg-surface-container-low px-6">
+            <button class="tab-btn active" onclick="switchTab('tabela')">
+                <span class="material-symbols-outlined text-sm mr-1">table</span> Tabela Completa
+            </button>
+            <button class="tab-btn" onclick="switchTab('segmentos')">
+                <span class="material-symbols-outlined text-sm mr-1">donut_large</span> Por Segmento
+            </button>
+            <button class="tab-btn" onclick="switchTab('geografico')">
+                <span class="material-symbols-outlined text-sm mr-1">map</span> Análise Geográfica
+            </button>
+            <button class="tab-btn" onclick="switchTab('distribuicao')">
+                <span class="material-symbols-outlined text-sm mr-1">bar_chart</span> Distribuição
+            </button>
+        </div>
 
-            <!-- Right: Table (60%) -->
-            <div class="col-span-3 bg-surface-container-lowest elevation-1 flex flex-col p-5 overflow-hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold font-headline text-on-surface">Top Clientes</h2>
-                    <span class="text-xs text-on-surface-variant">Últimos 12 meses</span>
-                </div>
-                <div class="flex-1 overflow-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="sticky top-0 bg-surface-container-lowest text-on-surface-variant border-b border-outline-variant/20">
+        <!-- Tab Contents -->
+        <div class="flex-1 overflow-auto p-6">
+            
+            <!-- Tabela Tab -->
+            <div id="tab-tabela" class="tab-content active">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <table id="table-rfv" class="w-full">
+                        <thead>
                             <tr>
-                                <th class="pb-3 font-semibold font-label">Cliente</th>
-                                <th class="pb-3 font-semibold font-label text-right">Pedidos</th>
-                                <th class="pb-3 font-semibold font-label text-right">Ticket Médio</th>
-                                <th class="pb-3 font-semibold font-label text-right">Valor Total</th>
-                                <th class="pb-3 font-semibold font-label text-center">Segmento</th>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Região</th>
+                                <th>Segmento</th>
+                                <th>Recência (dias)</th>
+                                <th>Última Compra</th>
+                                <th>Frequência</th>
+                                <th>Ticket Médio</th>
+                                <th>Valor Total</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-outline-variant/10">
-                            {% for cliente in rfv_data %}
-                            <tr class="hover:bg-surface-container-low transition-colors">
-                                <td class="py-3 font-medium text-on-surface">{{ cliente.nome }}</td>
-                                <td class="py-3 text-right font-body">{{ cliente.total_pedidos }}</td>
-                                <td class="py-3 text-right font-body">R$ {{ "{:,.0f}".format(cliente.ticket_medio).replace(",", ".") }}</td>
-                                <td class="py-3 text-right font-body font-semibold">R$ {{ "{:,.0f}".format(cliente.valor_total).replace(",", ".") }}</td>
-                                <td class="py-3 text-center">
-                                    <span class="px-2 py-1 rounded-full text-[10px] font-medium
-                                        {% if cliente.segmento == 'Campeao' %}bg-secondary-container text-on-secondary-container
-                                        {% elif cliente.segmento == 'Fiel' %}bg-primary-container text-on-primary-container
-                                        {% elif cliente.segmento == 'Ativo' %}bg-surface-container-high text-on-surface-variant
-                                        {% else %}bg-tertiary-container text-on-tertiary-container{% endif %}">
-                                        {{ cliente.segmento }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
-        </section>
+
+            <!-- Segmentos Tab -->
+            <div id="tab-segmentos" class="tab-content">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Distribuição por Segmento</h3>
+                        <div id="chart-segmentos-pie"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Valor por Segmento</h3>
+                        <div id="chart-segmentos-valor"></div>
+                    </div>
+                </div>
+                <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl mt-6">
+                    <h3 class="font-bold mb-4">Detalhamento por Segmento</h3>
+                    <div class="grid grid-cols-4 gap-4" id="segmentos-cards">
+                        <!-- Cards serão gerados via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Geográfico Tab -->
+            <div id="tab-geografico" class="tab-content">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Clientes por Região</h3>
+                        <div id="chart-regiao-barras"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Valor Total por Região</h3>
+                        <div id="chart-regiao-valor"></div>
+                    </div>
+                </div>
+                <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl mt-6">
+                    <h3 class="font-bold mb-4">Tabela por Região</h3>
+                    <table id="table-regiao" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>Região</th>
+                                <th>Total Clientes</th>
+                                <th>Campeões</th>
+                                <th>Valor Total</th>
+                                <th>Ticket Médio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-regiao"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Distribuição Tab -->
+            <div id="tab-distribuicao" class="tab-content">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Distribuição da Recência</h3>
+                        <div id="chart-recencia-hist"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Distribuição do Valor</h3>
+                        <div id="chart-valor-box"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-6 mt-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Frequência vs Valor</h3>
+                        <div id="chart-freq-valor"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Recência vs Valor</h3>
+                        <div id="chart-rec-valor"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="h-6 flex items-center justify-between px-6 bg-surface text-[10px] text-outline font-label uppercase tracking-widest border-t border-outline-variant/10">
-        <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full {% if db_available %}bg-secondary{% else %}bg-tertiary{% endif %}"></span>
-            <span>{% if db_available %}Dados em tempo real{% else %}Modo demonstração{% endif %}</span>
-        </div>
-        <span>Agromercantil Analytics v2.4.0</span>
-    </footer>
-
+    <!-- Scripts -->
     <script>
-        // Gráfico de Pizza - Distribuição de Segmentos
-        var segmentosData = [{
-            values: [45, 128, 320, 67],
-            labels: ['Campeão', 'Fiel', 'Ativo', 'Em Risco'],
-            type: 'pie',
-            hole: 0.4,
-            marker: {
-                colors: ['#b9f467', '#cbedab', '#e8e8e3', '#ffddb4']
-            },
-            textinfo: 'label+percent',
-            textposition: 'outside'
-        }];
+        let rfvData = [];
+        let table;
 
-        var layout = {
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            margin: { l: 20, r: 20, t: 20, b: 20 },
-            showlegend: false,
-            font: { family: 'Inter, sans-serif', size: 11 }
-        };
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'segmentos') renderSegmentos();
+            if (tabName === 'geografico') renderGeografico();
+            if (tabName === 'distribuicao') renderDistribuicao();
+        }
 
-        Plotly.newPlot('chart-segmentos', segmentosData, layout, {responsive: true, displayModeBar: false});
+        // Carregar dados RFV
+        $(document).ready(function() {
+            fetch('/api/rfv')
+                .then(r => r.json())
+                .then(data => {
+                    rfvData = data;
+                    atualizarKPIs(data);
+                    inicializarTabela(data);
+                });
+        });
+
+        function inicializarTabela(data) {
+            table = $('#table-rfv').DataTable({
+                data: data,
+                columns: [
+                    { data: 'id_cliente' },
+                    { data: 'nome' },
+                    { data: 'tipo_cliente' },
+                    { data: 'regiao' },
+                    { data: 'segmento', render: function(data) {
+                        const classes = {
+                            'Campeao': 'badge-campeao',
+                            'Fiel': 'badge-fiel',
+                            'Ativo': 'badge-ativo',
+                            'Em Risco': 'badge-risco'
+                        };
+                        return `<span class="px-2 py-1 rounded text-xs ${classes[data] || 'bg-gray-200'}">${data}</span>`;
+                    }},
+                    { data: 'dias_desde_ultimo' },
+                    { data: 'ultima_data' },
+                    { data: 'total_pedidos' },
+                    { data: 'ticket_medio', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') },
+                    { data: 'valor_total', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') }
+                ],
+                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
+                pageLength: 25,
+                order: [[9, 'desc']]
+            });
+        }
+
+        function atualizarKPIs(data) {
+            document.getElementById('kpi-total').textContent = data.length;
+            
+            const segmentos = { 'Campeao': 0, 'Fiel': 0, 'Ativo': 0, 'Em Risco': 0 };
+            data.forEach(d => {
+                if (segmentos.hasOwnProperty(d.segmento)) segmentos[d.segmento]++;
+            });
+            
+            document.getElementById('kpi-campeao').textContent = segmentos['Campeao'];
+            document.getElementById('kpi-fiel').textContent = segmentos['Fiel'];
+            document.getElementById('kpi-ativo').textContent = segmentos['Ativo'];
+            document.getElementById('kpi-risco').textContent = segmentos['Em Risco'];
+        }
+
+        function filtrarTabela() {
+            const segmento = document.getElementById('filtro-segmento').value;
+            const regiao = document.getElementById('filtro-regiao').value;
+            
+            let filtered = rfvData;
+            if (segmento) filtered = filtered.filter(d => d.segmento === segmento);
+            if (regiao) filtered = filtered.filter(d => d.regiao === regiao);
+            
+            table.clear().rows.add(filtered).draw();
+            atualizarKPIs(filtered);
+        }
+
+        function renderSegmentos() {
+            // Agrupar por segmento
+            const segmentos = {};
+            rfvData.forEach(d => {
+                if (!segmentos[d.segmento]) segmentos[d.segmento] = { count: 0, valor: 0 };
+                segmentos[d.segmento].count++;
+                segmentos[d.segmento].valor += d.valor_total;
+            });
+
+            // Gráfico de pizza
+            const labels = Object.keys(segmentos);
+            const values = labels.map(l => segmentos[l].count);
+            const colors = ['#112800', '#436900', '#F58220', '#ba1a1a'];
+            
+            Plotly.newPlot('chart-segmentos-pie', [{
+                values: values, labels: labels, type: 'pie', hole: 0.4,
+                marker: { colors: colors },
+                textinfo: 'label+percent', textposition: 'outside'
+            }], {
+                margin: {t: 40, b: 10, l: 10, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+
+            // Gráfico de barras - valor
+            const valores = labels.map(l => segmentos[l].valor);
+            Plotly.newPlot('chart-segmentos-valor', [{
+                x: labels, y: valores, type: 'bar',
+                marker: { color: colors },
+                text: valores.map(v => 'R$ ' + (v/1e6).toFixed(1) + 'M'),
+                textposition: 'auto'
+            }], {
+                margin: {t: 40, b: 40, l: 60, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+
+            // Cards de detalhamento
+            const cardsContainer = document.getElementById('segmentos-cards');
+            cardsContainer.innerHTML = labels.map((seg, i) => `
+                <div class="p-4 rounded-lg border-l-4" style="background: #f4f4ef; border-color: ${colors[i]}">
+                    <p class="text-xs text-on-surface-variant uppercase">${seg}</p>
+                    <p class="text-xl font-bold">${segmentos[seg].count} clientes</p>
+                    <p class="text-sm">R$ ${(segmentos[seg].valor/1e6).toFixed(2)}M</p>
+                </div>
+            `).join('');
+        }
+
+        function renderGeografico() {
+            // Agrupar por região
+            const regioes = {};
+            rfvData.forEach(d => {
+                if (!regioes[d.regiao]) regioes[d.regiao] = { count: 0, valor: 0, campeoes: 0 };
+                regioes[d.regiao].count++;
+                regioes[d.regiao].valor += d.valor_total;
+                if (d.segmento === 'Campeao') regioes[d.regiao].campeoes++;
+            });
+
+            const labels = Object.keys(regioes);
+            const counts = labels.map(l => regioes[l].count);
+            const valores = labels.map(l => regioes[l].valor);
+
+            // Barras - clientes
+            Plotly.newPlot('chart-regiao-barras', [{
+                x: labels, y: counts, type: 'bar',
+                marker: { color: '#436900' }
+            }], {
+                margin: {t: 40, b: 40, l: 40, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+
+            // Barras - valor
+            Plotly.newPlot('chart-regiao-valor', [{
+                x: labels, y: valores, type: 'bar',
+                marker: { color: '#112800' }
+            }], {
+                margin: {t: 40, b: 40, l: 60, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+
+            // Tabela
+            const tbody = document.getElementById('tbody-regiao');
+            tbody.innerHTML = labels.map(r => `
+                <tr>
+                    <td>${r}</td>
+                    <td>${regioes[r].count}</td>
+                    <td>${regioes[r].campeoes}</td>
+                    <td>R$ ${(regioes[r].valor/1e6).toFixed(2)}M</td>
+                    <td>R$ ${(regioes[r].valor/regioes[r].count/1e3).toFixed(0)}k</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderDistribuicao() {
+            // Histograma de recência
+            const recencias = rfvData.map(d => d.dias_desde_ultimo);
+            Plotly.newPlot('chart-recencia-hist', [{
+                x: recencias, type: 'histogram', nbinsx: 20,
+                marker: { color: '#436900' }
+            }], {
+                margin: {t: 40, b: 40, l: 50, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+
+            // Box plot de valor
+            const valores = rfvData.map(d => d.valor_total);
+            Plotly.newPlot('chart-valor-box', [{
+                y: valores, type: 'box',
+                marker: { color: '#F58220' },
+                boxpoints: 'outliers'
+            }], {
+                margin: {t: 40, b: 40, l: 60, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+
+            // Scatter frequência vs valor
+            Plotly.newPlot('chart-freq-valor', [{
+                x: rfvData.map(d => d.total_pedidos),
+                y: rfvData.map(d => d.valor_total),
+                mode: 'markers', type: 'scatter',
+                marker: { color: '#112800', size: 8, opacity: 0.6 },
+                text: rfvData.map(d => d.nome)
+            }], {
+                margin: {t: 40, b: 40, l: 60, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+
+            // Scatter recência vs valor
+            Plotly.newPlot('chart-rec-valor', [{
+                x: rfvData.map(d => d.dias_desde_ultimo),
+                y: rfvData.map(d => d.valor_total),
+                mode: 'markers', type: 'scatter',
+                marker: { color: '#ba1a1a', size: 8, opacity: 0.6 },
+                text: rfvData.map(d => d.nome)
+            }], {
+                margin: {t: 40, b: 40, l: 60, r: 10},
+                showlegend: false
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                modeBar: { orientation: 'h', bgcolor: 'rgba(255,255,255,0.8)', x: 0.5, xanchor: 'center', y: 1.05 }
+            });
+        }
+
+        function exportarExcel() {
+            alert('Exportação para Excel será implementada');
+        }
     </script>
 
-<!-- Chat Widget -->
-<script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
+    <!-- Chat Widget -->
+    <script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
 </body>
 </html>

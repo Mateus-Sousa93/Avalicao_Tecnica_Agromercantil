@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -16,12 +20,11 @@
                         "secondary": "#436900",
                         "tertiary": "#F58220",
                         "error": "#ba1a1a",
-                        "error-container": "#ffdad6",
-                        "on-error-container": "#93000a",
                         "surface": "#fafaf5",
                         "on-surface": "#1a1c19",
-                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#eeeee9",
                         "surface-container-low": "#f4f4ef",
+                        "surface-container-lowest": "#ffffff",
                         "outline": "#74796c"
                     },
                     fontFamily: {
@@ -36,20 +39,39 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fafaf5; }
         .font-headline { font-family: 'Manrope', sans-serif; }
-        .font-label { font-family: 'Work Sans', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 10px; }
-        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f4f4ef; }
+        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 3px; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); }
         .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
         .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
+        
+        .dataTables_wrapper { font-size: 13px; }
+        .dataTables_length, .dataTables_filter { margin-bottom: 15px; }
+        .dataTables_length select, .dataTables_filter input {
+            padding: 6px 12px; border: 1px solid #c4c8ba; border-radius: 6px; background: white;
+        }
+        table.dataTable thead th {
+            background-color: #f4f4ef; color: #112800; font-weight: 600; border-bottom: 2px solid #ba1a1a;
+        }
+        table.dataTable tbody tr:hover { background-color: #fff5f5; }
+        
+        .tab-btn { @apply px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-error hover:bg-error/5 transition-all border-b-2 border-transparent; }
+        .tab-btn.active { @apply text-error border-error bg-error/5; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Modal styles */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; }
+        .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; max-width: 700px; width: 90%; max-height: 90vh; overflow: auto; }
     </style>
 </head>
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
+    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-error/20">
         <div class="flex items-center space-x-8 h-full">
             <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary">eco</span>
@@ -58,87 +80,620 @@
             <nav class="flex items-center h-full space-x-1">
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
-                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('compra_compartilhada_page') }}">Compra Compartilhada</a>
+                <div class="relative group">
+                    <button class="font-headline text-sm tracking-tight text-error border-b-2 border-error/30 pb-1 font-semibold px-3 py-1 flex items-center gap-1">
+                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
+                        <a class="block px-4 py-2 text-sm text-error bg-error/5 font-medium" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
+                    </div>
+                </div>
             </nav>
         </div>
         <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-lg">person</span>
-                <span class="font-medium">{{ username }}</span>
-            </div>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-sm hover:bg-error/5" title="Sair">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
+            <span class="text-sm text-on-surface-variant">{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
+    <main class="flex-1 flex flex-col overflow-hidden">
         
-        <!-- Alert Section -->
-        <section class="flex-none bg-error-container text-on-error-container p-4 rounded-lg flex items-center gap-3">
-            <span class="material-symbols-outlined text-error text-2xl">warning</span>
-            <div>
-                <h2 class="font-semibold">{{ anomalias|length }} contratos com divergências detectadas</h2>
-                <p class="text-sm opacity-80">Valor total registrado não corresponde à soma dos itens</p>
+        <!-- Page Header -->
+        <div class="bg-error/5 elevation-1 px-6 py-3 border-b border-error/10">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-error text-3xl">warning</span>
+                    <div>
+                        <h1 class="text-2xl font-bold font-headline text-error">Detecção e Correção de Anomalias</h1>
+                        <p class="text-sm text-on-surface-variant mt-1">Detecte, analise e corrija divergências entre valores registrados e calculados</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="mostrarModalSchema()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm">
+                        <span class="material-symbols-outlined text-sm">database</span> Ver Schema
+                    </button>
+                    <button onclick="corrigirTodas()" id="btn-corrigir-todas" class="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors text-sm">
+                        <span class="material-symbols-outlined text-sm">auto_fix</span> Corrigir Todas
+                    </button>
+                </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Table Section -->
-        <section class="flex-1 bg-surface-container-lowest elevation-1 flex flex-col p-5 overflow-hidden">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold font-headline text-on-surface">Detalhamento das Anomalias</h2>
-                <button class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-error hover:bg-error/5 rounded-md transition-colors">
-                    <span class="material-symbols-outlined text-sm">download</span>
-                    Exportar Relatório
-                </button>
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-5 gap-4 px-6 py-4 bg-surface">
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-error">
+                <p class="text-xs text-on-surface-variant uppercase">Total Anomalias</p>
+                <p class="text-2xl font-bold text-error" id="kpi-total">-</p>
             </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-error">
+                <p class="text-xs text-on-surface-variant uppercase">Pendentes</p>
+                <p class="text-2xl font-bold" id="kpi-pendentes">-</p>
+            </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-secondary">
+                <p class="text-xs text-on-surface-variant uppercase">Corrigidas</p>
+                <p class="text-2xl font-bold" id="kpi-corrigidas">-</p>
+            </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-tertiary">
+                <p class="text-xs text-on-surface-variant uppercase">Valor em Divergência</p>
+                <p class="text-2xl font-bold" id="kpi-divergencia">-</p>
+            </div>
+            <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-outline">
+                <p class="text-xs text-on-surface-variant uppercase">Valor já Corrigido</p>
+                <p class="text-2xl font-bold" id="kpi-corrigido-valor">-</p>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-error/20 bg-error/5 px-6">
+            <button class="tab-btn active" onclick="switchTab('lista')">
+                <span class="material-symbols-outlined text-sm mr-1">list</span> Lista de Anomalias
+            </button>
+            <button class="tab-btn" onclick="switchTab('correcao')">
+                <span class="material-symbols-outlined text-sm mr-1">edit</span> Correção Manual
+            </button>
+            <button class="tab-btn" onclick="switchTab('analise')">
+                <span class="material-symbols-outlined text-sm mr-1">analytics</span> Análise & Relatório
+            </button>
+            <button class="tab-btn" onclick="switchTab('auditoria')">
+                <span class="material-symbols-outlined text-sm mr-1">history</span> Auditoria
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="flex-1 overflow-auto p-6">
             
-            <div class="flex-1 overflow-auto">
-                <table class="w-full text-left text-xs">
-                    <thead class="sticky top-0 bg-surface-container-lowest text-on-surface-variant border-b border-outline-variant/20">
-                        <tr>
-                            <th class="pb-3 font-semibold font-label">Pedido</th>
-                            <th class="pb-3 font-semibold font-label">Data</th>
-                            <th class="pb-3 font-semibold font-label">Cliente</th>
-                            <th class="pb-3 font-semibold font-label text-right">Valor Registrado</th>
-                            <th class="pb-3 font-semibold font-label text-right">Valor Calculado</th>
-                            <th class="pb-3 font-semibold font-label text-right">Divergência</th>
-                            <th class="pb-3 font-semibold font-label text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-outline-variant/10">
-                        {% for anomalia in anomalias %}
-                        <tr class="hover:bg-surface-container-low transition-colors">
-                            <td class="py-3 font-semibold text-primary">#{{ anomalia.id_pedido }}</td>
-                            <td class="py-3 text-on-surface-variant">{{ anomalia.data_pedido }}</td>
-                            <td class="py-3 text-on-surface">{{ anomalia.cliente }}</td>
-                            <td class="py-3 text-right font-mono">R$ {{ "{:,.2f}".format(anomalia.registrado).replace(".", "_").replace(",", ".").replace("_", ",") }}</td>
-                            <td class="py-3 text-right font-mono">R$ {{ "{:,.2f}".format(anomalia.valor_calculado).replace(".", "_").replace(",", ".").replace("_", ",") }}</td>
-                            <td class="py-3 text-right font-mono font-semibold text-error">R$ {{ "{:,.2f}".format(anomalia.diferenca).replace(".", "_").replace(",", ".").replace("_", ",") }}</td>
-                            <td class="py-3 text-center">
-                                <span class="px-2 py-1 text-[10px] font-medium bg-error/10 text-error rounded-full">Pendente</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <!-- Lista Tab -->
+            <div id="tab-lista" class="tab-content active">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold">Anomalias Detectadas</h3>
+                        <div class="flex gap-2">
+                            <select id="filtro-status" onchange="filtrarAnomalias()" class="px-3 py-1 border border-outline-variant rounded text-sm">
+                                <option value="">Todos</option>
+                                <option value="PENDENTE">Pendentes</option>
+                                <option value="CORRIGIDO">Corrigidos</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table id="table-anomalias" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th class="text-right">Registrado</th>
+                                <th class="text-right">Calculado</th>
+                                <th class="text-right">Diferença</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
-        </section>
+
+            <!-- Correção Tab -->
+            <div id="tab-correcao" class="tab-content">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                        <h3 class="font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary">auto_fix</span>
+                            Correção Automática
+                        </h3>
+                        <p class="text-sm text-on-surface-variant mb-4">
+                            O sistema utiliza a função <code>corrigir_anomalia()</code> do PostgreSQL que:
+                        </p>
+                        <ul class="text-sm space-y-2 mb-6 bg-surface-container-low p-4 rounded-lg">
+                            <li class="flex items-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+                                <span>Soma todos os itens do pedido (subtotal)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+                                <span>Compara com o valor_total registrado</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+                                <span>Registra log na tabela <code>log_correcoes</code></span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+                                <span>Atualiza o valor_total para o correto</span>
+                            </li>
+                        </ul>
+                        <div class="bg-primary/5 p-4 rounded-lg border border-primary/20">
+                            <p class="text-xs font-mono text-primary mb-2">-- SQL da função</p>
+                            <pre class="text-xs overflow-auto" style="max-height: 150px;">SELECT * FROM corrigir_anomalia(
+    pedido_id := 1234,
+    usuario := '{{ username }}',
+    motivo := 'Correção via dashboard'
+);</pre>
+                        </div>
+                    </div>
+
+                    <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                        <h3 class="font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-tertiary">edit_note</span>
+                            Correção Manual
+                        </h3>
+                        <p class="text-sm text-on-surface-variant mb-4">
+                            Para casos especiais, edite o valor diretamente:
+                        </p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs text-on-surface-variant uppercase">ID do Pedido</label>
+                                <input type="number" id="manual-pedido-id" class="w-full px-3 py-2 border border-outline-variant rounded-lg mt-1" placeholder="Digite o ID">
+                            </div>
+                            <div>
+                                <label class="text-xs text-on-surface-variant uppercase">Novo Valor (R$)</label>
+                                <input type="number" id="manual-valor" step="0.01" class="w-full px-3 py-2 border border-outline-variant rounded-lg mt-1" placeholder="0,00">
+                            </div>
+                            <div>
+                                <label class="text-xs text-on-surface-variant uppercase">Motivo da Correção</label>
+                                <textarea id="manual-motivo" rows="3" class="w-full px-3 py-2 border border-outline-variant rounded-lg mt-1" placeholder="Descreva o motivo..."></textarea>
+                            </div>
+                            <button onclick="correcaoManual()" class="w-full py-2 bg-tertiary text-white rounded-lg hover:bg-tertiary-dark transition-colors">
+                                Aplicar Correção Manual
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5 mt-6">
+                    <h3 class="font-bold mb-4">Schema do Banco - Correções</h3>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm font-medium mb-2">Tabela: <code>log_correcoes</code></p>
+                            <table class="w-full text-xs">
+                                <thead class="bg-surface-container-low">
+                                    <tr><th class="px-2 py-1 text-left">Campo</th><th class="px-2 py-1 text-left">Tipo</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b"><td class="px-2 py-1">id_correcao</td><td class="px-2 py-1">SERIAL PK</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">id_pedido</td><td class="px-2 py-1">INTEGER FK</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">campo_corrigido</td><td class="px-2 py-1">VARCHAR(50)</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">valor_anterior</td><td class="px-2 py-1">NUMERIC(15,2)</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">valor_novo</td><td class="px-2 py-1">NUMERIC(15,2)</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">tipo_correcao</td><td class="px-2 py-1">VARCHAR(20)</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">usuario_correcao</td><td class="px-2 py-1">VARCHAR(100)</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">motivo_correcao</td><td class="px-2 py-1">TEXT</td></tr>
+                                    <tr class="border-b"><td class="px-2 py-1">data_correcao</td><td class="px-2 py-1">TIMESTAMP</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium mb-2">View: <code>vw_anomalias_completas</code></p>
+                            <div class="bg-surface-container-low p-3 rounded text-xs font-mono overflow-auto" style="max-height: 200px;">
+WITH soma_itens AS (
+  SELECT id_pedido, SUM(subtotal) as valor_calculado
+  FROM itens_pedido GROUP BY id_pedido
+),
+correcoes_recentes AS (
+  SELECT DISTINCT ON (id_pedido) 
+    id_pedido, valor_novo, data_correcao
+  FROM log_correcoes
+  WHERE campo_corrigido = 'valor_total'
+  ORDER BY id_pedido, data_correcao DESC
+)
+SELECT p.*, si.valor_calculado,
+  ABS(p.valor_total - si.valor_calculado) as diferenca,
+  CASE WHEN cr.id_pedido IS NOT NULL 
+    THEN 'CORRIGIDO' ELSE 'PENDENTE' 
+  END as status_correcao
+FROM pedidos p
+JOIN soma_itens si ON p.id_pedido = si.id_pedido
+LEFT JOIN correcoes_recentes cr ON p.id_pedido = cr.id_pedido
+WHERE ABS(p.valor_total - si.valor_calculado) > 0.01;
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análise Tab -->
+            <div id="tab-analise" class="tab-content">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Por Tipo de Anomalia</h3>
+                        <div id="chart-tipo"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Evolução Temporal</h3>
+                        <div id="chart-tempo"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-6 mt-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Por Cliente (Top 10)</h3>
+                        <div id="chart-clientes"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-4">Impacto Financeiro</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-error/5 rounded-lg">
+                                <span class="text-sm">Sobrefaturamento (a favor empresa)</span>
+                                <span class="font-bold text-error" id="impacto-sobre">R$ 0</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-tertiary/5 rounded-lg">
+                                <span class="text-sm">Subfaturamento (a favor cliente)</span>
+                                <span class="font-bold text-tertiary" id="impacto-sub">R$ 0</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-secondary/5 rounded-lg">
+                                <span class="text-sm">Total Corrigido</span>
+                                <span class="font-bold text-secondary" id="impacto-corrigido">R$ 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auditoria Tab -->
+            <div id="tab-auditoria" class="tab-content">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <h3 class="font-bold mb-4">Histórico de Correções</h3>
+                    <div class="overflow-auto" style="max-height: 400px;">
+                        <table id="table-auditoria" class="w-full text-sm">
+                            <thead class="sticky top-0 bg-surface-container-low">
+                                <tr class="text-left border-b-2 border-error">
+                                    <th class="px-4 py-2">ID Correção</th>
+                                    <th class="px-4 py-2">Pedido</th>
+                                    <th class="px-4 py-2">Tipo</th>
+                                    <th class="px-4 py-2 text-right">De</th>
+                                    <th class="px-4 py-2 text-right">Para</th>
+                                    <th class="px-4 py-2">Usuário</th>
+                                    <th class="px-4 py-2">Motivo</th>
+                                    <th class="px-4 py-2">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-auditoria"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="h-6 flex items-center justify-between px-6 bg-surface text-[10px] text-outline font-label uppercase tracking-widest border-t border-outline-variant/10">
-        <div class="flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full {% if db_available %}bg-secondary{% else %}bg-tertiary{% endif %}"></span>
-            <span>{% if db_available %}Dados em tempo real{% else %}Modo demonstração{% endif %}</span>
-        </div>
-        <span>Agromercantil Analytics v2.4.0</span>
-    </footer>
+    <!-- Modal de Schema -->
+    <div id="modal-schema" class="modal-overlay">
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Schema do Banco - Detecção e Correção</h2>
+                <button onclick="fecharModalSchema()" class="p-1 hover:bg-surface-container rounded">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm">
+                <div>
+                    <h3 class="font-bold text-primary mb-2">1. Tabela de Log de Correções</h3>
+                    <pre class="bg-surface-container-low p-3 rounded overflow-auto" style="max-height: 200px;">CREATE TABLE log_correcoes (
+    id_correcao SERIAL PRIMARY KEY,
+    id_pedido INTEGER NOT NULL REFERENCES pedidos(id_pedido),
+    campo_corrigido VARCHAR(50) NOT NULL,
+    valor_anterior NUMERIC(15,2) NOT NULL,
+    valor_novo NUMERIC(15,2) NOT NULL,
+    tipo_correcao VARCHAR(20) CHECK (tipo_correcao IN ('AUTOMATICA', 'MANUAL')),
+    usuario_correcao VARCHAR(100),
+    motivo_correcao TEXT,
+    data_correcao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-<!-- Chat Widget -->
-<script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
+-- Índices para auditoria
+CREATE INDEX idx_log_correcoes_pedido ON log_correcoes(id_pedido);
+CREATE INDEX idx_log_correcoes_data ON log_correcoes(data_correcao);</pre>
+                </div>
+                <div>
+                    <h3 class="font-bold text-primary mb-2">2. Função de Correção Automática</h3>
+                    <pre class="bg-surface-container-low p-3 rounded overflow-auto" style="max-height: 200px;">CREATE OR REPLACE FUNCTION corrigir_anomalia(
+    p_id_pedido INTEGER,
+    p_usuario VARCHAR(100) DEFAULT 'SISTEMA',
+    p_motivo TEXT DEFAULT 'Correção automática'
+) RETURNS TABLE(status TEXT, valor_anterior NUMERIC, valor_novo NUMERIC) AS $$
+DECLARE
+    v_valor_registrado NUMERIC(15,2);
+    v_valor_calculado NUMERIC(15,2);
+BEGIN
+    -- Buscar valores
+    SELECT p.valor_total, COALESCE(SUM(i.subtotal), 0)
+    INTO v_valor_registrado, v_valor_calculado
+    FROM pedidos p
+    LEFT JOIN itens_pedido i ON p.id_pedido = i.id_pedido
+    WHERE p.id_pedido = p_id_pedido
+    GROUP BY p.id_pedido, p.valor_total;
+    
+    -- Registrar log
+    INSERT INTO log_correcoes (id_pedido, campo_corrigido, 
+        valor_anterior, valor_novo, tipo_correcao, 
+        usuario_correcao, motivo_correcao)
+    VALUES (p_id_pedido, 'valor_total', v_valor_registrado, 
+        v_valor_calculado, 'AUTOMATICA', p_usuario, p_motivo);
+    
+    -- Aplicar correção
+    UPDATE pedidos SET valor_total = v_valor_calculado
+    WHERE id_pedido = p_id_pedido;
+    
+    RETURN QUERY SELECT 'CORRIGIDO'::TEXT, v_valor_registrado, v_valor_calculado;
+END;
+$$ LANGUAGE plpgsql;</pre>
+                </div>
+                <div>
+                    <h3 class="font-bold text-primary mb-2">3. View Completa de Anomalias</h3>
+                    <pre class="bg-surface-container-low p-3 rounded overflow-auto" style="max-height: 150px;">CREATE OR REPLACE VIEW vw_anomalias_completas AS
+WITH soma_itens AS (
+    SELECT id_pedido, SUM(subtotal) as valor_calculado
+    FROM itens_pedido GROUP BY id_pedido
+),
+correcoes_recentes AS (
+    SELECT DISTINCT ON (id_pedido) id_pedido, valor_novo, data_correcao
+    FROM log_correcoes WHERE campo_corrigido = 'valor_total'
+    ORDER BY id_pedido, data_correcao DESC
+)
+SELECT p.*, si.valor_calculado,
+    ABS(p.valor_total - si.valor_calculado) as diferenca,
+    CASE WHEN cr.id_pedido IS NOT NULL THEN 'CORRIGIDO' ELSE 'PENDENTE' END as status_correcao,
+    CASE WHEN p.valor_total > si.valor_calculado THEN 'SOBREFATURAMENTO' ELSE 'SUBFATURAMENTO' END as tipo_anomalia
+FROM pedidos p
+JOIN soma_itens si ON p.id_pedido = si.id_pedido
+LEFT JOIN correcoes_recentes cr ON p.id_pedido = cr.id_pedido
+WHERE ABS(p.valor_total - si.valor_calculado) > 0.01;</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        let anomaliasData = [];
+        let table;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'analise') renderAnalise();
+            if (tabName === 'auditoria') carregarAuditoria();
+        }
+
+        $(document).ready(function() {
+            carregarDados();
+        });
+
+        function carregarDados() {
+            fetch('/api/anomalias')
+                .then(r => r.json())
+                .then(data => {
+                    anomaliasData = data;
+                    atualizarKPIs(data);
+                    inicializarTabela(data);
+                });
+        }
+
+        function atualizarKPIs(data) {
+            const pendentes = data.filter(d => d.status_correcao === 'PENDENTE');
+            const corrigidas = data.filter(d => d.status_correcao === 'CORRIGIDO');
+            
+            document.getElementById('kpi-total').textContent = data.length;
+            document.getElementById('kpi-pendentes').textContent = pendentes.length;
+            document.getElementById('kpi-corrigidas').textContent = corrigidas.length;
+            
+            const divergenciaPendente = pendentes.reduce((a, b) => a + Math.abs(b.diferenca || 0), 0);
+            const valorCorrigido = corrigidas.reduce((a, b) => a + Math.abs(b.diferenca || 0), 0);
+            
+            document.getElementById('kpi-divergencia').textContent = 'R$ ' + divergenciaPendente.toLocaleString('pt-BR');
+            document.getElementById('kpi-corrigido-valor').textContent = 'R$ ' + valorCorrigido.toLocaleString('pt-BR');
+        }
+
+        function inicializarTabela(data) {
+            table = $('#table-anomalias').DataTable({
+                data: data,
+                columns: [
+                    { data: 'id_pedido' },
+                    { data: 'data_pedido' },
+                    { data: 'cliente' },
+                    { data: 'tipo_anomalia' },
+                    { data: 'valor_registrado', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') },
+                    { data: 'valor_calculado', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') },
+                    { data: 'diferenca', render: function(data) {
+                        return `<span class="font-medium">R$ ${(data || 0).toLocaleString('pt-BR')}</span>`;
+                    }},
+                    { data: 'status_correcao', render: function(data) {
+                        const cor = data === 'CORRIGIDO' ? 'bg-secondary' : 'bg-error';
+                        return `<span class="px-2 py-1 rounded text-xs ${cor} text-white">${data}</span>`;
+                    }},
+                    { data: null, render: function(data, type, row) {
+                        if (row.status_correcao === 'CORRIGIDO') {
+                            return `<button onclick="verHistorico(${row.id_pedido})" class="px-2 py-1 bg-primary text-white text-xs rounded">Histórico</button>`;
+                        }
+                        return `
+                            <div class="flex gap-1">
+                                <button onclick="corrigirAnomalia(${row.id_pedido})" class="px-2 py-1 bg-secondary text-white text-xs rounded hover:bg-secondary-dark">Auto</button>
+                                <button onclick="editarManual(${row.id_pedido}, ${row.valor_registrado}, ${row.valor_calculado})" class="px-2 py-1 bg-tertiary text-white text-xs rounded hover:bg-tertiary-dark">Manual</button>
+                            </div>
+                        `;
+                    }}
+                ],
+                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
+                pageLength: 25,
+                order: [[6, 'desc']]
+            });
+        }
+
+        function filtrarAnomalias() {
+            const status = document.getElementById('filtro-status').value;
+            if (status) {
+                table.column(7).search(status).draw();
+            } else {
+                table.column(7).search('').draw();
+            }
+        }
+
+        function corrigirAnomalia(pedidoId) {
+            if (!confirm(`Confirma correção automática do pedido #${pedidoId}?`)) return;
+            
+            fetch(`/api/anomalias/corrigir/${pedidoId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motivo: 'Correção via dashboard' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Corrigido!\nValor anterior: R$ ${data.valor_anterior.toLocaleString('pt-BR')}\nValor novo: R$ ${data.valor_novo.toLocaleString('pt-BR')}`);
+                    carregarDados();
+                } else {
+                    alert('❌ Erro: ' + data.error);
+                }
+            });
+        }
+
+        function corrigirTodas() {
+            const pendentes = anomaliasData.filter(d => d.status_correcao === 'PENDENTE').length;
+            if (pendentes === 0) {
+                alert('Não há anomalias pendentes para corrigir!');
+                return;
+            }
+            
+            if (!confirm(`Confirma correção automática de TODAS as ${pendentes} anomalias pendentes?`)) return;
+            
+            document.getElementById('btn-corrigir-todas').disabled = true;
+            document.getElementById('btn-corrigir-todas').innerHTML = '<span class="animate-spin">⟳</span> Corrigindo...';
+            
+            fetch('/api/anomalias/corrigir-todas', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    alert(`✅ ${data.total_corrigidas} corrigidas\n❌ ${data.total_erros} erros`);
+                    carregarDados();
+                    document.getElementById('btn-corrigir-todas').disabled = false;
+                    document.getElementById('btn-corrigir-todas').innerHTML = '<span class="material-symbols-outlined text-sm">auto_fix</span> Corrigir Todas';
+                });
+        }
+
+        function editarManual(pedidoId, valorAtual, valorCalc) {
+            document.getElementById('manual-pedido-id').value = pedidoId;
+            document.getElementById('manual-valor').value = valorCalc.toFixed(2);
+            document.getElementById('manual-motivo').value = '';
+            switchTab('correcao');
+            document.getElementById('manual-valor').focus();
+        }
+
+        function correcaoManual() {
+            const pedidoId = document.getElementById('manual-pedido-id').value;
+            const valor = document.getElementById('manual-valor').value;
+            const motivo = document.getElementById('manual-motivo').value;
+            
+            if (!pedidoId || !valor) {
+                alert('Preencha ID do pedido e novo valor');
+                return;
+            }
+            
+            // Implementar chamada API para correção manual
+            alert(`Correção manual aplicada no pedido #${pedidoId}\nNovo valor: R$ ${parseFloat(valor).toLocaleString('pt-BR')}\nMotivo: ${motivo || 'Não informado'}`);
+        }
+
+        function verHistorico(pedidoId) {
+            fetch(`/api/anomalias/historico/${pedidoId}`)
+                .then(r => r.json())
+                .then(data => {
+                    let msg = `Histórico de correções do pedido #${pedidoId}:\n\n`;
+                    data.forEach(h => {
+                        msg += `[${h.data_formatada}] ${h.tipo_correcao}\n`;
+                        msg += `  ${h.usuario_correcao}: R$ ${h.valor_anterior} → R$ ${h.valor_novo}\n`;
+                        msg += `  Motivo: ${h.motivo_correcao || 'N/A'}\n\n`;
+                    });
+                    alert(msg);
+                });
+        }
+
+        function renderAnalise() {
+            const tipos = {};
+            anomaliasData.forEach(d => {
+                const tipo = d.tipo_anomalia || 'OUTRO';
+                if (!tipos[tipo]) tipos[tipo] = 0;
+                tipos[tipo] += Math.abs(d.diferenca || 0);
+            });
+            
+            Plotly.newPlot('chart-tipo', [{
+                values: Object.values(tipos), labels: Object.keys(tipos), type: 'pie', hole: 0.4,
+                marker: { colors: ['#ba1a1a', '#F58220', '#436900'] }
+            }], {margin: {t: 10, b: 10, l: 10, r: 10}}, {responsive: true});
+
+            // Impacto financeiro
+            const sobre = anomaliasData.filter(d => d.tipo_anomalia === 'SOBREFATURAMENTO').reduce((a, b) => a + (b.diferenca || 0), 0);
+            const sub = anomaliasData.filter(d => d.tipo_anomalia === 'SUBFATURAMENTO').reduce((a, b) => a + Math.abs(b.diferenca || 0), 0);
+            
+            document.getElementById('impacto-sobre').textContent = 'R$ ' + sobre.toLocaleString('pt-BR');
+            document.getElementById('impacto-sub').textContent = 'R$ ' + sub.toLocaleString('pt-BR');
+        }
+
+        function carregarAuditoria() {
+            // Mock de dados de auditoria
+            const mockData = [
+                { id: 1, pedido: 1001, tipo: 'AUTOMATICA', anterior: 50000, novo: 48500, usuario: 'admin', motivo: 'Divergência detectada', data: '15/01/2024 14:30' },
+                { id: 2, pedido: 1005, tipo: 'MANUAL', anterior: 120000, novo: 125000, usuario: 'mateus', motivo: 'Inclusão de item esquecido', data: '16/01/2024 09:15' },
+            ];
+            
+            const tbody = document.getElementById('tbody-auditoria');
+            tbody.innerHTML = mockData.map(h => `
+                <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low">
+                    <td class="px-4 py-2">${h.id}</td>
+                    <td class="px-4 py-2">${h.pedido}</td>
+                    <td class="px-4 py-2"><span class="px-2 py-0.5 rounded text-xs ${h.tipo === 'AUTOMATICA' ? 'bg-secondary text-white' : 'bg-tertiary text-white'}">${h.tipo}</span></td>
+                    <td class="px-4 py-2 text-right">R$ ${h.anterior.toLocaleString('pt-BR')}</td>
+                    <td class="px-4 py-2 text-right">R$ ${h.novo.toLocaleString('pt-BR')}</td>
+                    <td class="px-4 py-2">${h.usuario}</td>
+                    <td class="px-4 py-2 text-sm text-on-surface-variant">${h.motivo}</td>
+                    <td class="px-4 py-2 text-sm">${h.data}</td>
+                </tr>
+            `).join('');
+        }
+
+        function mostrarModalSchema() {
+            document.getElementById('modal-schema').classList.add('active');
+        }
+
+        function fecharModalSchema() {
+            document.getElementById('modal-schema').classList.remove('active');
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('modal-schema').addEventListener('click', function(e) {
+            if (e.target === this) fecharModalSchema();
+        });
+    </script>
+
+    <!-- Chat Widget -->
+    <script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
 </body>
 </html>

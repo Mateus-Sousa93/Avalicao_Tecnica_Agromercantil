@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Explorer de Dados | Agromercantil Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#112800",
+                        "secondary": "#436900",
+                        "tertiary": "#F58220",
+                        "surface": "#fafaf5",
+                        "on-surface": "#1a1c19",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f4f4ef",
+                        "surface-container": "#eeeee9",
+                        "outline": "#74796c"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Work Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fafaf5; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .font-label { font-family: 'Work Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f4f4ef; }
+        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 3px; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); }
+        .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
+        .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
+        
+        /* DataTables Customization */
+        .dataTables_wrapper { font-size: 13px; }
+        .dataTables_length, .dataTables_filter { margin-bottom: 15px; }
+        .dataTables_length select, .dataTables_filter input {
+            padding: 6px 12px;
+            border: 1px solid #c4c8ba;
+            border-radius: 6px;
+            background: white;
+        }
+        table.dataTable thead th {
+            background-color: #f4f4ef;
+            color: #112800;
+            font-weight: 600;
+            border-bottom: 2px solid #112800;
+        }
+        table.dataTable tbody tr:hover { background-color: #f4f4ef; }
+        .dt-buttons .dt-button {
+            background: #112800 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 6px !important;
+            padding: 6px 16px !important;
+            font-size: 12px !important;
+        }
+        
+        /* Tab Styles */
+        .tab-btn {
+            @apply px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all border-b-2 border-transparent;
+        }
+        .tab-btn.active {
+            @apply text-primary border-primary bg-surface-container-low;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
+
+    <!-- Header -->
+    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
+        <div class="flex items-center space-x-8 h-full">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">eco</span>
+                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
+            </div>
+            <nav class="flex items-center h-full space-x-1">
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
+                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
+                <div class="relative group">
+                    <button class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1 flex items-center gap-1">
+                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-on-surface-variant">{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        
+        <!-- Page Header -->
+        <div class="bg-surface-container-lowest elevation-1 px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold font-headline text-on-surface">Explorer de Dados</h1>
+                    <p class="text-sm text-on-surface-variant mt-1">Visualize e explore todos os dados do sistema</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="refreshData()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                        Atualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-outline-variant/20 bg-surface-container-low px-6">
+            <button class="tab-btn active" onclick="switchTab('clientes')">
+                <span class="material-symbols-outlined text-sm mr-1">people</span> Clientes
+            </button>
+            <button class="tab-btn" onclick="switchTab('produtos')">
+                <span class="material-symbols-outlined text-sm mr-1">inventory</span> Produtos
+            </button>
+            <button class="tab-btn" onclick="switchTab('pedidos')">
+                <span class="material-symbols-outlined text-sm mr-1">receipt</span> Pedidos
+            </button>
+            <button class="tab-btn" onclick="switchTab('itens')">
+                <span class="material-symbols-outlined text-sm mr-1">list</span> Itens de Pedido
+            </button>
+            <button class="tab-btn" onclick="switchTab('resumo')">
+                <span class="material-symbols-outlined text-sm mr-1">dashboard</span> Resumo Estatístico
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="flex-1 overflow-auto p-6">
+            
+            <!-- Clientes Tab -->
+            <div id="tab-clientes" class="tab-content active">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold font-headline">Tabela de Clientes</h2>
+                        <span class="text-sm text-on-surface-variant" id="clientes-count">Carregando...</span>
+                    </div>
+                    <table id="table-clientes" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Tipo</th>
+                                <th>Região</th>
+                                <th>Estado</th>
+                                <th>Data Cadastro</th>
+                                <th>Limite Crédito</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Produtos Tab -->
+            <div id="tab-produtos" class="tab-content">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold font-headline">Tabela de Produtos</h2>
+                        <span class="text-sm text-on-surface-variant" id="produtos-count">Carregando...</span>
+                    </div>
+                    <table id="table-produtos" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th>Subcategoria</th>
+                                <th>Unidade</th>
+                                <th>Preço Unitário</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pedidos Tab -->
+            <div id="tab-pedidos" class="tab-content">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold font-headline">Tabela de Pedidos</h2>
+                        <div class="flex gap-2">
+                            <input type="date" id="filtro-data-inicio" class="px-3 py-1 text-sm border border-outline-variant rounded-lg" placeholder="Data início">
+                            <input type="date" id="filtro-data-fim" class="px-3 py-1 text-sm border border-outline-variant rounded-lg" placeholder="Data fim">
+                            <button onclick="filtrarPedidos()" class="px-3 py-1 bg-secondary text-white text-sm rounded-lg">Filtrar</button>
+                        </div>
+                    </div>
+                    <table id="table-pedidos" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>ID Pedido</th>
+                                <th>Data</th>
+                                <th>Data Entrega</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Valor Total</th>
+                                <th>Origem</th>
+                                <th>Destino</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Itens Tab -->
+            <div id="tab-itens" class="tab-content">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold font-headline">Itens de Pedido</h2>
+                        <span class="text-sm text-on-surface-variant" id="itens-count">Carregando...</span>
+                    </div>
+                    <table id="table-itens" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>ID Item</th>
+                                <th>Pedido</th>
+                                <th>Produto</th>
+                                <th>Quantidade</th>
+                                <th>Preço Unitário</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Resumo Estatístico Tab -->
+            <div id="tab-resumo" class="tab-content">
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-primary">
+                        <p class="text-xs text-on-surface-variant uppercase">Total Clientes</p>
+                        <p class="text-2xl font-bold" id="resumo-clientes">-</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-secondary">
+                        <p class="text-xs text-on-surface-variant uppercase">Total Produtos</p>
+                        <p class="text-2xl font-bold" id="resumo-produtos">-</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-tertiary">
+                        <p class="text-xs text-on-surface-variant uppercase">Total Pedidos</p>
+                        <p class="text-2xl font-bold" id="resumo-pedidos">-</p>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-outline">
+                        <p class="text-xs text-on-surface-variant uppercase">Faturamento Total</p>
+                        <p class="text-2xl font-bold" id="resumo-faturamento">-</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-3">Pedidos por Status</h3>
+                        <div id="chart-status"></div>
+                    </div>
+                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
+                        <h3 class="font-bold mb-3">Top 10 Clientes por Valor</h3>
+                        <div id="chart-top-clientes"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            // Carregar dados se necessário
+            if (tabName === 'resumo') {
+                carregarResumo();
+            }
+        }
+
+        // Inicializar DataTables
+        $(document).ready(function() {
+            // Tabela Clientes
+            $('#table-clientes').DataTable({
+                ajax: '/api/explorer/clientes',
+                columns: [
+                    { data: 'id_cliente' },
+                    { data: 'nome' },
+                    { data: 'tipo_cliente' },
+                    { data: 'regiao' },
+                    { data: 'estado' },
+                    { data: 'data_cadastro' },
+                    { data: 'limite_credito', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'
+                },
+                dom: 'Blfrtip',
+                buttons: ['excel', 'csv'],
+                pageLength: 25,
+                initComplete: function(settings, json) {
+                    $('#clientes-count').text(json.data.length + ' registros');
+                }
+            });
+
+            // Tabela Produtos
+            $('#table-produtos').DataTable({
+                ajax: '/api/explorer/produtos',
+                columns: [
+                    { data: 'id_produto' },
+                    { data: 'nome' },
+                    { data: 'categoria' },
+                    { data: 'subcategoria' },
+                    { data: 'unidade' },
+                    { data: 'preco_unitario', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'
+                },
+                dom: 'Blfrtip',
+                buttons: ['excel', 'csv'],
+                pageLength: 25,
+                initComplete: function(settings, json) {
+                    $('#produtos-count').text(json.data.length + ' registros');
+                }
+            });
+
+            // Tabela Pedidos
+            $('#table-pedidos').DataTable({
+                ajax: '/api/explorer/pedidos',
+                columns: [
+                    { data: 'id_pedido' },
+                    { data: 'data_pedido' },
+                    { data: 'data_entrega' },
+                    { data: 'cliente_nome' },
+                    { data: 'tipo_contrato' },
+                    { data: 'status', render: function(data) {
+                        const colors = {
+                            'Executado': 'bg-secondary text-white',
+                            'Pendente': 'bg-tertiary text-white',
+                            'Cancelado': 'bg-error text-white',
+                            'Em Andamento': 'bg-primary text-white'
+                        };
+                        return `<span class="px-2 py-1 rounded text-xs ${colors[data] || 'bg-gray-200'}">${data}</span>`;
+                    }},
+                    { data: 'valor_total', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') },
+                    { data: 'regiao_origem' },
+                    { data: 'regiao_destino' }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'
+                },
+                dom: 'Blfrtip',
+                buttons: ['excel', 'csv'],
+                pageLength: 25,
+                order: [[1, 'desc']]
+            });
+
+            // Tabela Itens
+            $('#table-itens').DataTable({
+                ajax: '/api/explorer/itens',
+                columns: [
+                    { data: 'id_item' },
+                    { data: 'id_pedido' },
+                    { data: 'produto_nome' },
+                    { data: 'quantidade' },
+                    { data: 'preco_unitario', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') },
+                    { data: 'subtotal', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'
+                },
+                dom: 'Blfrtip',
+                buttons: ['excel', 'csv'],
+                pageLength: 25,
+                initComplete: function(settings, json) {
+                    $('#itens-count').text(json.data.length + ' registros');
+                }
+            });
+        });
+
+        // Carregar Resumo Estatístico
+        function carregarResumo() {
+            fetch('/api/explorer/resumo')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('resumo-clientes').textContent = data.total_clientes;
+                    document.getElementById('resumo-produtos').textContent = data.total_produtos;
+                    document.getElementById('resumo-pedidos').textContent = data.total_pedidos;
+                    document.getElementById('resumo-faturamento').textContent = 'R$ ' + data.faturamento_total.toLocaleString('pt-BR');
+                    
+                    // Gráfico Status
+                    Plotly.newPlot('chart-status', [{
+                        values: data.status_values,
+                        labels: data.status_labels,
+                        type: 'pie',
+                        hole: 0.4,
+                        marker: { colors: ['#436900', '#F58220', '#ba1a1a', '#112800'] }
+                    }], {margin: {t: 10, b: 10, l: 10, r: 10}}, {responsive: true});
+                    
+                    // Gráfico Top Clientes
+                    Plotly.newPlot('chart-top-clientes', [{
+                        x: data.top_clientes_valores,
+                        y: data.top_clientes_nomes,
+                        type: 'bar',
+                        orientation: 'h',
+                        marker: { color: '#112800' }
+                    }], {margin: {t: 10, b: 40, l: 150, r: 10}}, {responsive: true});
+                });
+        }
+
+        function refreshData() {
+            location.reload();
+        }
+
+        function filtrarPedidos() {
+            const inicio = document.getElementById('filtro-data-inicio').value;
+            const fim = document.getElementById('filtro-data-fim').value;
+            
+            const table = $('#table-pedidos').DataTable();
+            table.ajax.url('/api/explorer/pedidos?inicio=' + inicio + '&fim=' + fim).load();
+        }
+    </script>
+
+    <!-- Chat Widget -->
+    <script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
+</body>
+</html>
