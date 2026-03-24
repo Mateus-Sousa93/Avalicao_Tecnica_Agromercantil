@@ -33,11 +33,11 @@ try:
         genai.configure(api_key=GEMINI_API_KEY)
         gemini_model = genai.GenerativeModel('gemini-pro')
         GEMINI_AVAILABLE = True
-        print("✅ Gemini API configurada")
+        print("OK: Gemini API configurada")
     else:
-        print("⚠️ GEMINI_API_KEY nao encontrada no .env")
+        print("AVISO: GEMINI_API_KEY nao encontrada no .env")
 except ImportError:
-    print("⚠️ Biblioteca google-generativeai nao instalada")
+    print("AVISO: Biblioteca google-generativeai nao instalada")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'agromercantil-secret-key-2025')
@@ -425,7 +425,7 @@ def get_local_response(message):
         return "Nossa tendência está positiva. Crescimento de 12% no faturamento comparado ao ano passado. Os meses de março e abril foram os melhores, provavelmente pela safra de soja.\n\nQuer ver o gráfico completo de vendas mensais? Posso te mostrar os picos sazonais."
     
     else:
-        return "Entendi. Posso te ajudar com dados sobre faturamento, clientes, produtos ou tendências do nosso negócio.\n\nO que você gostaria de explorar? Se quiser, posso começar te mostrando os destaques do mês.
+        return "Entendi. Posso te ajudar com dados sobre faturamento, clientes, produtos ou tendências do nosso negócio.\n\nO que você gostaria de explorar? Se quiser, posso começar te mostrando os destaques do mês."
 
 # ============================================
 # APIs - DADOS
