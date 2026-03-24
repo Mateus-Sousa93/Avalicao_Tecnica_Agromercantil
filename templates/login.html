@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Login | Agromercantil Analytics</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-fixed": "#0c2000",
+                        "on-secondary-container": "#476f00",
+                        "surface-bright": "#fcf9f8",
+                        "secondary": "#436900",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#44483e",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#1b1c1c",
+                        "outline": "#74796c",
+                        "inverse-surface": "#303030",
+                        "surface-tint": "#4a6632",
+                        "surface": "#fcf9f8",
+                        "on-secondary-fixed": "#112000",
+                        "surface-variant": "#e4e2e1",
+                        "secondary-container": "#b9f467",
+                        "surface-container": "#f0eded",
+                        "primary-container": "#253f0f",
+                        "inverse-primary": "#b0d191",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#d99425",
+                        "tertiary": "#331f00",
+                        "on-tertiary-fixed-variant": "#633f00",
+                        "on-tertiary": "#ffffff",
+                        "background": "#fcf9f8",
+                        "surface-container-highest": "#e4e2e1",
+                        "surface-dim": "#dcd9d9",
+                        "primary-fixed-dim": "#b0d191",
+                        "surface-container-low": "#f6f3f2",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#9fd74e",
+                        "on-primary-container": "#8cab6f",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#314f00",
+                        "primary": "#112800",
+                        "surface-container-high": "#eae7e7",
+                        "outline-variant": "#c4c8ba",
+                        "on-primary-fixed-variant": "#334e1d",
+                        "on-surface": "#1b1c1c",
+                        "tertiary-fixed": "#ffddb4",
+                        "secondary-fixed": "#b9f467",
+                        "tertiary-fixed-dim": "#ffb954",
+                        "inverse-on-surface": "#f3f0ef",
+                        "tertiary-container": "#503200",
+                        "primary-fixed": "#cbedab",
+                        "accent-orange": "#F58220"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "brand": ["Montserrat"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-hero-gradient {
+            background: linear-gradient(135deg, #112800 0%, #253f0f 100%);
+        }
+        .tonal-shadow {
+            box-shadow: 0 40px 80px -20px rgba(27, 28, 28, 0.06);
+        }
+        .input-underline {
+            border: none;
+            border-bottom: 2px solid rgba(196, 200, 186, 0.5);
+            background: transparent;
+            transition: border-color 0.2s;
+        }
+        .input-underline:focus {
+            outline: none;
+            border-bottom-color: #436900;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface overflow-hidden">
+    <main class="min-h-screen flex flex-col md:flex-row">
+        
+        <!-- Left Side: Hero Branding -->
+        <section class="hidden md:flex md:w-1/2 lg:w-3/5 bg-hero-gradient relative flex-col justify-between p-16 overflow-hidden">
+            <!-- Decorative Elements -->
+            <div class="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
+                <div class="absolute -top-24 -right-24 w-96 h-96 bg-primary-fixed rounded-full blur-3xl"></div>
+                <div class="absolute bottom-1/4 -left-12 w-64 h-64 bg-secondary-container rounded-full blur-3xl"></div>
+            </div>
+            
+            <!-- Logo Area -->
+            <div class="relative z-10 flex items-center gap-4">
+                <div class="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
+                    <span class="material-symbols-outlined text-primary-fixed text-4xl" style="font-variation-settings: 'FILL' 1;">eco</span>
+                </div>
+                <div>
+                    <h1 class="font-brand font-bold text-3xl tracking-tighter text-white">AGROMERCANTIL</h1>
+                    <p class="font-brand text-xs text-primary-fixed/80 tracking-widest uppercase">Soluções Inteligentes para o Agro</p>
+                </div>
+            </div>
+            
+            <!-- Hero Message -->
+            <div class="relative z-10 max-w-xl">
+                <div class="w-16 h-1.5 bg-tertiary-fixed mb-8"></div>
+                <h2 class="font-headline font-extrabold text-5xl lg:text-6xl text-white leading-tight mb-6">
+                    A inteligência de dados que cultiva o seu <span class="text-primary-fixed">sucesso.</span>
+                </h2>
+                <p class="text-lg text-white/70 font-body leading-relaxed max-w-md">
+                    Analise commodities globais com precisão institucional. Onde a tradição do campo encontra a tecnologia do futuro.
+                </p>
+            </div>
+            
+            <!-- Visual Asset -->
+            <div class="absolute bottom-0 right-0 w-3/4 h-2/3 z-0 opacity-40">
+                <img alt="Soy plants" class="w-full h-full object-cover rounded-tl-[120px]" src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=800&q=80"/>
+            </div>
+            
+            <div class="relative z-10 text-white/40 text-sm font-label tracking-widest uppercase">
+                Market Analytics Platform v4.2
+            </div>
+        </section>
+        
+        <!-- Right Side: Login Form -->
+        <section class="flex-1 flex flex-col justify-center items-center p-6 md:p-12 lg:p-24 bg-surface-container-low relative">
+            <div class="w-full max-w-md">
+                
+                <!-- Mobile Header (Hidden on Desktop) -->
+                <div class="md:hidden flex items-center gap-3 mb-12">
+                    <span class="material-symbols-outlined text-secondary text-3xl">eco</span>
+                    <h1 class="font-brand font-bold text-xl text-primary">AGROMERCANTIL</h1>
+                </div>
+                
+                <!-- Form Heading -->
+                <header class="mb-10 relative">
+                    <div class="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-tertiary-fixed hidden md:block"></div>
+                    <h2 class="font-brand font-bold text-3xl text-primary mb-2">Analytics Dashboard</h2>
+                    <p class="text-on-surface-variant font-body">Plataforma de Análise de Commodities</p>
+                </header>
+                
+                <!-- Login Card -->
+                <div class="bg-surface-container-lowest p-8 md:p-10 rounded-2xl tonal-shadow border border-outline-variant/10">
+                    
+                    {% if error %}
+                    <div class="mb-6 p-4 bg-error-container/50 border border-error rounded-xl flex items-center gap-3">
+                        <span class="material-symbols-outlined text-error">error</span>
+                        <span class="text-error text-sm font-medium">{{ error }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" action="{{ url_for('login') }}" class="space-y-6">
+                        <!-- Username Field -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold font-label uppercase tracking-widest text-on-surface-variant" for="username">Usuário</label>
+                            <div class="relative group">
+                                <span class="material-symbols-outlined absolute left-0 bottom-3 text-outline group-focus-within:text-secondary transition-colors">person</span>
+                                <input 
+                                    class="w-full pl-8 py-3 bg-transparent border-0 border-b-2 border-outline-variant/30 focus:border-secondary focus:ring-0 transition-all text-on-surface placeholder:text-outline/50 font-body input-underline" 
+                                    id="username" 
+                                    name="username" 
+                                    placeholder="Digite seu usuário" 
+                                    type="text"
+                                    required
+                                    autofocus
+                                />
+                            </div>
+                        </div>
+                        
+                        <!-- Password Field -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <label class="block text-xs font-bold font-label uppercase tracking-widest text-on-surface-variant" for="password">Senha</label>
+                                <a class="text-xs font-bold font-label text-secondary hover:text-primary transition-colors uppercase tracking-wider" href="#">Esqueci minha senha</a>
+                            </div>
+                            <div class="relative group">
+                                <span class="material-symbols-outlined absolute left-0 bottom-3 text-outline group-focus-within:text-secondary transition-colors">lock</span>
+                                <input 
+                                    class="w-full pl-8 py-3 bg-transparent border-0 border-b-2 border-outline-variant/30 focus:border-secondary focus:ring-0 transition-all text-on-surface placeholder:text-outline/50 font-body input-underline" 
+                                    id="password" 
+                                    name="password" 
+                                    placeholder="••••••••" 
+                                    type="password"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        
+                        <!-- Remember Me -->
+                        <div class="flex items-center gap-3">
+                            <input class="w-5 h-5 rounded border-outline-variant text-secondary focus:ring-secondary/20" id="remember" name="remember" type="checkbox"/>
+                            <label class="text-sm text-on-surface-variant font-body" for="remember">Manter conectado por 30 dias</label>
+                        </div>
+                        
+                        <!-- Primary Action -->
+                        <button class="w-full py-4 bg-accent-orange hover:bg-[#e67610] text-white font-brand font-bold rounded-xl transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98] flex items-center justify-center gap-2" type="submit">
+                            <span>Entrar</span>
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                        </button>
+                    </form>
+                    
+                    <!-- Test Users -->
+                    <div class="mt-6 pt-6 border-t border-outline-variant/20">
+                        <p class="text-xs font-label text-outline uppercase tracking-widest text-center mb-4">Usuários de Teste</p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center px-4 py-2 bg-surface-container rounded-lg text-sm">
+                                <span class="font-semibold text-secondary">admin</span>
+                                <span class="text-on-surface-variant font-mono text-xs">admin123</span>
+                            </div>
+                            <div class="flex justify-between items-center px-4 py-2 bg-surface-container rounded-lg text-sm">
+                                <span class="font-semibold text-secondary">avaliador</span>
+                                <span class="text-on-surface-variant font-mono text-xs">agro2024</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer Support -->
+                <div class="mt-8 flex justify-center gap-8">
+                    <a class="text-xs font-label text-outline hover:text-secondary transition-colors flex items-center gap-1" href="#">
+                        <span class="material-symbols-outlined text-sm">help</span>
+                        Suporte
+                    </a>
+                    <a class="text-xs font-label text-outline hover:text-secondary transition-colors flex items-center gap-1" href="#">
+                        <span class="material-symbols-outlined text-sm">language</span>
+                        PT-BR
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Semantic Footer -->
+            <footer class="absolute bottom-0 left-0 right-0 py-6 px-12 flex flex-col md:flex-row justify-between items-center border-t border-outline-variant/20 bg-surface-container-low">
+                <p class="font-body text-sm tracking-wide text-outline mb-4 md:mb-0">Agromercantil © 2025 - Soluções Inteligentes para o Agro</p>
+                <div class="flex gap-6">
+                    <a class="font-body text-sm tracking-wide text-outline hover:text-secondary transition-all hover:underline" href="#">Privacidade</a>
+                    <a class="font-body text-sm tracking-wide text-outline hover:text-secondary transition-all hover:underline" href="#">Termos de Uso</a>
+                    <a class="font-body text-sm tracking-wide text-outline hover:text-secondary transition-all hover:underline" href="#">Contato</a>
+                </div>
+            </footer>
+        </section>
+    </main>
+</body>
+</html>

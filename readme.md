@@ -1,236 +1,208 @@
-Agromercantil Data Analytics
-Sistema completo de análise de dados para trading de commodities agrícolas, desenvolvido para avaliação técnica de Analista de Dados. Inclui dashboard interativo Streamlit com agente AI integrado (Gemini) para insights automatizados.
- Python 
+# Agromercantil Analytics
 
- Streamlit 
+Sistema de análise de commodities agrícolas desenvolvido para avaliação técnica de Analista de Dados.
 
- Supabase 
-📋 Sumário
-Visão Geral
-Arquitetura
-Funcionalidades
-Estrutura do Projeto
-Configuração do Ambiente
-Ingestão de Dados
-Consultas SQL Analíticas
-Dashboard Streamlit
-Agente AI Gemini
-🎯 Visão Geral
-Este projeto expande os requisitos técnicos originais, incorporando:
-Dados realistas: 1.500 contratos de commodities (soja, milho, trigo) + serviços logísticos
-Cloud Database: Supabase (PostgreSQL) com índices otimizados para analytics
-Agente AI: Integração com Google Gemini para insights automatizados e recomendações estratégicas
-Visualização Corporativa: Identidade visual Agromercantil, responsivo mobile/desktop com Tailwind CSS
-🏗️ Arquitetura
-plain
-Copy
-Excel/Mock → Python/Pandas → Supabase → Streamlit/Gemini
-📁 Estrutura do Projeto
-plain
-Copy
-agromercantil-analytics/
-├── data/
-│   └── dados_agromercantil_commodities.xlsx
-├── sql/
-│   ├── schema_supabase.sql
-│   ├── query_rfv.sql
-│   ├── query_anomalias.sql
-│   └── query_tendencias.sql
-├── src/
-│   ├── ingestao_dados.py
-│   └── analise_exploratoria.py
-├── app/
-│   └── dashboard.py
-├── README.md
-└── requirements.txt
-⚙️ Configuração do Ambiente
-1. Pré-requisitos
-Python 3.9+
-Conta no Supabase
-API Key do Google Gemini
-2. Instalação
-bash
-Copy
-git clone https://github.com/seu-usuario/agromercantil-analytics.git
-cd agromercantil-analytics
+## Descrição do Projeto
+
+Plataforma de business intelligence para análise de dados comerciais de commodities agrícolas. O sistema permite visualizar tendências de vendas, segmentação de clientes (RFV), detecção de anomalias em pedidos e identificação de clientes inativos.
+
+## Arquitetura
+
+A aplicação foi desenvolvida utilizando arquitetura MVC com separação clara entre camada de apresentação, lógica de negócio e acesso a dados.
+
+## Tecnologias Utilizadas
+
+### Backend
+- **Python 3.13**: Linguagem principal pela robustez em manipulação de dados e ampla biblioteca de ciência de dados
+- **Flask 3.1**: Framework web minimalista que permite controle total sobre o fluxo de requisições e respostas, sem abstrações desnecessárias
+- **SQLAlchemy 2.0**: ORM para abstração de consultas SQL mantendo a flexibilidade de queries complexas quando necessário
+- **PostgreSQL**: Banco de dados relacional escolhido pelo suporte nativo a CTEs (Common Table Expressions) e funções de janela, essenciais para as análises RFV e tendências
+- **Pandas 3.0**: Manipulação e análise estatística dos dados
+
+### Frontend
+- **Tailwind CSS**: Framework CSS utilitário que permite customização visual precisa sem conflitos com classes pré-definidas
+- **Plotly.js**: Biblioteca de gráficos interativos com suporte a eventos de usuário e exportação de imagens
+- **Jinja2**: Templates HTML com herança e macros para reaproveitamento de componentes
+
+### Infraestrutura
+- **python-dotenv**: Gerenciamento de variáveis de ambiente para configurações de desenvolvimento/produção
+- **Gunicorn**: Servidor WSGI para deploy em produção
+
+## Justificativa das Escolhas
+
+### Por que Flask ao invés de Streamlit?
+
+Embora o requisito original mencionasse Streamlit, optamos por Flask pelos seguintes motivos técnicos:
+
+1. **Controle de Layout**: Streamlit impõe uma estrutura de containers que dificulta layouts complexos como split-screen e dashboards personalizados. Flask com Jinja2 permite HTML/CSS puro.
+
+2. **Performance**: Streamlit reexecuta o script Python a cada interação do usuário. Flask mantém estado de sessão e processa apenas requisições necessárias.
+
+3. **Manutenção**: Código Streamlit mistura lógica de negócio com apresentação. A separação MVC do Flask facilita testes unitários e manutenção.
+
+4. **Escalabilidade**: Flask permite adicionar API REST, autenticação customizada e caching de forma modular.
+
+### Por que Tailwind ao invés de Bootstrap/Material UI?
+
+Tailwind oferece granularidade de estilos sem sobrescrever classes globais. Isso permitiu implementar o design system Material 3 exatamente conforme especificações de cores, tipografia e espaçamento, sem conflitos com componentes pré-estilizados.
+
+## Funcionalidades Implementadas
+
+### Módulo de Autenticação
+- Sistema de login com sessão server-side
+- Hash SHA-256 para armazenamento seguro de credenciais
+- Proteção CSRF em formulários
+
+### Módulo de Analytics
+
+**1. Análise RFV (Recência, Frequência, Valor)**
+- Segmentação automática de clientes em categorias: Campeão, Fiel, Ativo, Em Risco
+- Utilização de CTEs e window functions (SUM OVER, COUNT OVER, LAG)
+- Visualização em gráfico de pizza interativo
+
+**2. Tendências de Vendas**
+- Evolução mensal de faturamento
+- Cálculo de crescimento percentual mês a mês usando LAG
+- Gráfico combinado de barras e linhas
+
+**3. Detecção de Anomalias**
+- Identificação de pedidos onde valor_total não corresponde à soma dos itens
+- Alertas em tempo real para divergências contábeis
+
+**4. Clientes Inativos**
+- Listagem de clientes sem compras nos últimos 180 dias
+- Indicadores para estratégias de retenção
+
+**5. Top Produtos**
+- Ranking dos 5 produtos mais rentáveis do último ano
+- Gráfico de barras horizontal com valores monetários
+
+### Módulo de Assistente Virtual
+- Interface de chat para consultas em linguagem natural
+- Sugestões de perguntas frequentes
+- Respostas contextualizadas baseadas em dados reais do sistema
+
+## Estrutura do Projeto
+
+```
+├── app.py                  # Aplicação Flask principal
+├── requirements.txt        # Dependências Python
+├── schema.sql             # DDL do banco de dados
+├── templates/             # Templates Jinja2
+│   ├── login.html        # Tela de autenticação
+│   ├── dashboard.html    # Painel principal
+│   └── chat.html         # Interface do assistente
+├── static/               # Assets estáticos
+│   ├── css/             # Estilos customizados
+│   ├── js/              # Scripts JavaScript
+│   └── images/          # Imagens e logos
+├── old/                 # Arquivos de referência (streamlit legado)
+└── venv/                # Ambiente virtual Python
+```
+
+## Configuração do Ambiente
+
+### Requisitos
+- Python 3.13 ou superior
+- PostgreSQL 14 ou superior
+- Acesso à internet (para CDN do Tailwind e Plotly)
+
+### Instalação
+
+1. Clone o repositório:
+```bash
+git clone <repository-url>
+cd Avalicao_Tecnica_Agromercantil
+```
+
+2. Crie e ative o ambiente virtual:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
+
+3. Instale as dependências:
+```bash
 pip install -r requirements.txt
-3. Variáveis de Ambiente
-Crie um arquivo .env:
-env
-Copy
-SUPABASE_URL=https://seu-projeto.supabase.co
-SUPABASE_KEY=eyJhbGci...
-GEMINI_API_KEY=AIzaSy...
-🚀 Ingestão de Dados
-bash
-Copy
-python src/ingestao_dados.py
-Saída esperada:
-plain
-Copy
-✅ Ingestão concluída!
-   - Clientes: 200 registros
-   - Produtos: 40 registros  
-   - Pedidos: 1.500 registros
-   - Itens: 1.980 registros
-🧮 Consultas SQL Analíticas (Requisitos do PDF)
-1. Análise RFV (Recência, Frequência, Valor)
-sql
-Copy
+```
+
+4. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+# Edite .env com suas configurações de banco de dados
+```
+
+5. Execute a aplicação:
+```bash
+python app.py
+```
+
+A aplicação estará disponível em `http://localhost:5000`
+
+### Deploy em Produção
+
+Para deploy em servidor de produção:
+
+```bash
+gunicorn -w 4 -b 0.0.0.0:8000 app:app
+```
+
+## Otimizações Realizadas
+
+### Banco de Dados
+- Criação de índices em colunas frequentemente filtradas (data_pedido, id_cliente)
+- Utilização de CTEs para legibilidade e reuso de subconsultas
+- Funções de janela para evitar joins desnecessários
+
+### Aplicação
+- Caching de conexões SQLAlchemy
+- Lazy loading de gráficos Plotly (carregamento sob demanda)
+- Compressão de assets estáticos
+
+## Consultas SQL Destaque
+
+### RFV - Segmentação de Clientes
+```sql
 WITH ultima_compra AS (
-    SELECT 
-        id_cliente,
-        MAX(data_pedido) as ultima_data,
-        CURRENT_DATE - MAX(data_pedido) as dias_desde_ultimo
-    FROM pedidos
-    WHERE status != 'Cancelado'
+    SELECT id_cliente, 
+           MAX(data_pedido) as ultima_data,
+           CURRENT_DATE - MAX(data_pedido) as dias_desde_ultimo
+    FROM pedidos 
+    WHERE status != 'Cancelado' 
     GROUP BY id_cliente
 ),
-metricas_cliente AS (
-    SELECT 
-        p.id_cliente,
-        COUNT(*) as total_pedidos,
-        AVG(p.valor_total) as ticket_medio,
-        SUM(p.valor_total) as valor_total
-    FROM pedidos p
-    WHERE p.status != 'Cancelado'
-    GROUP BY p.id_cliente
-)
-SELECT 
-    c.nome,
-    c.tipo_cliente,
-    uc.dias_desde_ultimo as dias_desde_ultimo_pedido,
-    mc.total_pedidos,
-    ROUND(mc.ticket_medio, 2) as ticket_medio,
-    ROUND(mc.valor_total, 2) as valor_total_acumulado
-FROM clientes c
-JOIN ultima_compra uc ON c.id_cliente = uc.id_cliente
-JOIN metricas_cliente mc ON c.id_cliente = mc.id_cliente
-ORDER BY mc.valor_total DESC;
-2. Detecção de Anomalias
-sql
-Copy
-WITH soma_itens AS (
-    SELECT 
-        id_pedido,
-        SUM(subtotal) as valor_calculado
-    FROM itens_pedido
-    GROUP BY id_pedido
-)
-SELECT 
-    p.id_pedido,
-    p.valor_total as valor_total_registrado,
-    si.valor_calculado,
-    ABS(p.valor_total - si.valor_calculado) as diferenca
-FROM pedidos p
-JOIN soma_itens si ON p.id_pedido = si.id_pedido
-WHERE ABS(p.valor_total - si.valor_calculado) > 0.01;
-3. Tendências de Vendas (Mensal com LAG)
-sql
-Copy
-WITH vendas_mensais AS (
-    SELECT 
-        DATE_TRUNC('month', data_pedido)::DATE as mes_ano,
-        SUM(valor_total) as total_vendas
-    FROM pedidos
-    WHERE status != 'Cancelado'
-    GROUP BY DATE_TRUNC('month', data_pedido)
-    ORDER BY mes_ano
-)
-SELECT 
-    TO_CHAR(mes_ano, 'YYYY-MM') as mes_ano,
-    ROUND(total_vendas, 2) as total_vendas,
-    ROUND(
-        ((total_vendas - LAG(total_vendas) OVER (ORDER BY mes_ano)) / 
-        LAG(total_vendas) OVER (ORDER BY mes_ano)) * 100, 2
-    ) as crescimento_percentual
-FROM vendas_mensais;
-4. Top 5 Produtos Mais Rentáveis
-sql
-Copy
-WITH receita_produtos AS (
-    SELECT 
-        p.id_produto,
-        p.nome,
-        SUM(i.quantidade * i.preco_unitario) as total_receita
-    FROM itens_pedido i
-    JOIN produtos p ON i.id_produto = p.id_produto
-    JOIN pedidos ped ON i.id_pedido = ped.id_pedido
-    WHERE ped.status != 'Cancelado'
-        AND ped.data_pedido >= CURRENT_DATE - INTERVAL '1 year'
-    GROUP BY p.id_produto, p.nome
-)
-SELECT 
-    id_produto,
-    nome,
-    ROUND(total_receita, 2) as total_vendas
-FROM receita_produtos
-ORDER BY total_receita DESC
-LIMIT 5;
-5. Clientes Inativos (> 6 meses)
-sql
-Copy
-WITH ultima_atividade AS (
-    SELECT 
-        id_cliente,
-        MAX(data_pedido) as ultima_compra,
-        CURRENT_DATE - MAX(data_pedido) as dias_inativo
-    FROM pedidos
+metricas AS (
+    SELECT id_cliente, 
+           COUNT(*) as total_pedidos,
+           ROUND(AVG(valor_total), 2) as ticket_medio,
+           ROUND(SUM(valor_total), 2) as valor_total
+    FROM pedidos 
+    WHERE status != 'Cancelado' 
     GROUP BY id_cliente
 )
-SELECT 
-    c.id_cliente,
-    c.nome,
-    ua.dias_inativo,
-    ua.ultima_compra
+SELECT c.id_cliente, c.nome, 
+       uc.dias_desde_ultimo, 
+       m.total_pedidos,
+       m.ticket_medio, 
+       m.valor_total,
+       CASE 
+           WHEN uc.dias_desde_ultimo <= 30 AND m.total_pedidos >= 5 THEN 'Campeão'
+           WHEN uc.dias_desde_ultimo <= 60 AND m.total_pedidos >= 3 THEN 'Fiel'
+           WHEN uc.dias_desde_ultimo <= 90 THEN 'Ativo'
+           ELSE 'Em Risco'
+       END as segmento
 FROM clientes c
-JOIN ultima_atividade ua ON c.id_cliente = ua.id_cliente
-WHERE ua.dias_inativo > 180
-ORDER BY ua.dias_inativo DESC;
-🖥️ Dashboard Streamlit
-Execução
-bash
-Copy
-streamlit run app/dashboard.py
-Funcionalidades
-Visão Geral: KPIs e evolução mensal
-Análise RFV: Segmentação de clientes com filtros
-Produtos: Top commodities e sazonalidade
-Qualidade: Detecção de anomalias
-Agente AI: Chat integrado com Gemini
-🧠 Agente AI Gemini
-O agente está configurado como um Analista de Negócios Sênior do Agronegócio.
-Prompt do Sistema
-plain
-Copy
-Você é um Analista de Dados Sênior da Agromercantil, especialista em commodities agrícolas.
-Suas respostas devem ser:
-1. Estratégicas: Foque em oportunidades de negócio
-2. Acionáveis: Sugira ações específicas
-3. Contextuais: Considere sazonalidade agrícola
-Exemplos de Perguntas
-"Qual commodity está gerando maior margem?"
-"Identifique riscos de concentração de clientes"
-"Sugira estratégia para clientes inativos do Sul"
-🎨 Identidade Visual
-Verde Floresta: #1B4D3E (principal)
-Dourado Trigo: #B8860B (destaques)
-Cinza Chumbo: #4A5568 (texto)
-Creme: #F7F5F0 (fundo)
-📝 Checklist de Entrega (PDF)
-[x] PostgreSQL (via Supabase)
-[x] Dados mock inseridos (Excel)
-[x] Python + Pandas para análise
-[x] Streamlit para visualização
-[x] CTEs e Window Functions (LAG, SUM OVER)
-[x] Análise RFV
-[x] Detecção de Anomalias
-[x] Top 5 produtos
-[x] Clientes Inativos
-[x] Tendências de Vendas
-[x] Modelo expandido (múltiplos clientes)
-[x] Justificativa de índices
-[x] Testes unitários
-[x] Documentação no GitHub
-📄 Licença
-MIT License
+JOIN ultima_compra uc ON c.id_cliente = uc.id_cliente
+JOIN metricas m ON c.id_cliente = m.id_cliente
+ORDER BY m.valor_total DESC;
+```
+
+## Licença
+
+Projeto desenvolvido para fins de avaliação técnica.
+
+## Contato
+
+Desenvolvedor: Mateus Sousa
+Avaliação: Analista de Dados - Agromercantil
