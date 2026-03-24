@@ -19,6 +19,26 @@ import json
 # Database
 from sqlalchemy import create_engine, text
 
+# Google Gemini
+from dotenv import load_dotenv
+load_dotenv()
+
+GEMINI_AVAILABLE = False
+gemini_model = None
+
+try:
+    import google.generativeai as genai
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel('gemini-pro')
+        GEMINI_AVAILABLE = True
+        print("✅ Gemini API configurada")
+    else:
+        print("⚠️ GEMINI_API_KEY nao encontrada no .env")
+except ImportError:
+    print("⚠️ Biblioteca google-generativeai nao instalada")
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'agromercantil-secret-key-2025')
 
@@ -264,40 +284,148 @@ def analise_page():
                          db_available=DB_AVAILABLE)
 
 # ============================================
-# CHATBOT API
+# CHATBOT API COM GEMINI
 # ============================================
+
+# Prompt de sistema para o AgroBot
+AGROBOT_SYSTEM_PROMPT = """Você é o AgroBot, um analista de commodities agrícolas sênior da Agromercantil com 15 anos de experiência no mercado. 
+
+Sua personalidade:
+- Conversacional, direto e prático (não seja robótico)
+- Tom profissional mas acolhedor, como um colega experiente
+- Usa linguagem do dia a dia do agronegócio
+- Sempre oferece insights práticos além da resposta básica
+
+Contexto da empresa:
+- Agromercantil é uma trader de commodities agrícolas (soja, milho, café, trigo, algodão)
+- Atua há 20 anos no mercado brasileiro
+- Clientes: cooperativas, produtores rurais, agroindústrias
+- Foco nas regiões: Mato Grosso, Paraná, Goiás, Rio Grande do Sul
+
+Dados atuais do sistema (use quando relevante):
+- Faturamento: R$ 5.2M no último ano
+- 847 clientes ativos
+- Ticket médio: R$ 18.450
+- 1.248 contratos
+- Top produto: Soja Premium (45% da receita)
+
+REGRAS IMPORTANTES:
+1. NUNCA comece com "Como analista..." ou "De acordo com minha experiência..." - seja natural
+2. Dê a resposta direta primeiro, depois pergunte se quer uma dica ou insight adicional
+3. Se não souber algo específico do banco, seja honesto e sugere verificar no dashboard
+4. Use exemplos reais do agronegócio quando possível
+5. Mantenha respostas curtas (máximo 3 parágrafos curtos)
+6. Termine com uma pergunta envolvente ou convite para continuar
+
+Exemplo de bom atendimento:
+Usuário: "Qual nosso faturamento?"
+Você: "Estamos com R$ 5.2M este ano, um crescimento legal de 12% comparado ao ano passado. 
+
+A soja continua puxando a fila com quase metade desse valor. Quer que eu te mostre como isso está distribuído por região? Posso te dar uma dica sobre onde estão as maiores oportunidades."
+"""
+
 @app.route('/api/chat', methods=['POST'])
 @login_required
 def chat_api():
     data = request.json
-    message = data.get('message', '').lower()
+    user_message = data.get('message', '').strip()
     
-    # Respostas baseadas em dados mock ou reais
+    if not user_message:
+        return jsonify({'response': 'Olá! Como posso ajudar você hoje?'})
+    
+    # Se Gemini não estiver disponível, usar respostas locais
+    if not GEMINI_AVAILABLE or not gemini_model:
+        return jsonify({'response': get_local_response(user_message)})
+    
+    try:
+        # Preparar contexto com dados atuais
+        context = get_context_data()
+        
+        # Criar prompt completo
+        full_prompt = f"""{AGROBOT_SYSTEM_PROMPT}
+
+Dados atuais do sistema:
+{context}
+
+Histórico da conversa:
+Usuário: {user_message}
+
+Responda como o AgroBot:"""
+
+        # Gerar resposta com Gemini
+        response = gemini_model.generate_content(
+            full_prompt,
+            generation_config={
+                'temperature': 0.7,
+                'max_output_tokens': 300,
+                'top_p': 0.9,
+            }
+        )
+        
+        bot_response = response.text.strip()
+        
+        # Se a resposta for muito curta ou vazia, usar fallback
+        if not bot_response or len(bot_response) < 10:
+            bot_response = get_local_response(user_message)
+        
+        return jsonify({'response': bot_response})
+        
+    except Exception as e:
+        print(f"Erro Gemini: {e}")
+        return jsonify({'response': get_local_response(user_message)})
+
+def get_context_data():
+    """Retorna dados atuais do sistema para contexto do bot"""
     if DB_AVAILABLE:
         metrics = get_metrics()
-        top_prod = get_top_produtos(1)
-        produto = top_prod[0]['nome'] if top_prod else 'N/A'
     else:
         metrics = MOCK_METRICS
-        produto = MOCK_TOP_PRODUTOS[0]['nome']
     
-    responses = {
-        'faturamento': f"O faturamento total e de {metrics['faturamento']}.",
-        'cliente': f"Temos {metrics['clientes']} clientes ativos no sistema.",
-        'produto': f"O produto mais vendido e {produto}.",
-        'ticket': f"O ticket medio e de {metrics['ticket_medio']}.",
-        'contrato': f"Temos {metrics['contratos']} contratos ativos.",
-        'ajuda': 'Posso responder sobre: faturamento, clientes, produtos, ticket medio e contratos.',
-    }
+    return f"""- Faturamento total: {metrics['faturamento']}
+- Clientes ativos: {metrics['clientes']}
+- Ticket médio: {metrics['ticket_medio']}
+- Contratos: {metrics['contratos']}
+- Última atualização: {metrics['last_update']}"""
+
+def get_local_response(message):
+    """Respostas locais quando Gemini não disponível"""
+    msg_lower = message.lower()
     
-    response = "Desculpe, nao entendi. Tente perguntar sobre faturamento, clientes ou produtos."
+    if DB_AVAILABLE:
+        metrics = get_metrics()
+    else:
+        metrics = MOCK_METRICS
     
-    for key, value in responses.items():
-        if key in message:
-            response = value
-            break
+    # Respostas contextuais
+    if any(word in msg_lower for word in ['faturamento', 'venda', 'receita', 'faturou']):
+        return f"Estamos com {metrics['faturamento']} este ano. A soja continua sendo nossa estrela, representando quase metade desse valor.\n\nQuer que eu te mostre como isso está distribuído por região? Posso te dar uma dica sobre onde estão as maiores oportunidades."
     
-    return jsonify({'response': response})
+    elif any(word in msg_lower for word in ['cliente', 'clientes', 'quem compra']):
+        return f"Temos {metrics['clientes']} clientes ativos no sistema. A maioria são cooperativas e produtores do Centro-Oeste e Sul.\n\nVocê quer ver quem são os clientes 'Campeões' que mais compram? Posso te mostrar o ranking RFV."
+    
+    elif any(word in msg_lower for word in ['produto', 'commodity', 'soja', 'milho', 'café']):
+        return f"Soja Premium é nosso carro-chefe, seguido de milho e café. Juntos representam mais de 70% do nosso faturamento.\n\nQuer saber quais produtos estão com maior crescimento este mês?"
+    
+    elif any(word in msg_lower for word in ['ticket', 'médio', 'ticket medio']):
+        return f"Nosso ticket médio está em {metrics['ticket_medio']}. É um valor bom para o mercado de commodities, mostra que estamos fechando contratos significativos.\n\nPosso te mostrar como isso varia por tipo de cliente?"
+    
+    elif any(word in msg_lower for word in ['contrato', 'contratos', 'pedido', 'vendas']):
+        return f"Temos {metrics['contratos']} contratos ativos. A média está em torno de 100 contratos por mês, o que é saudável para nossa operação.\n\nQuer ver a tendência dos últimos meses? Posso mostrar o crescimento mês a mês."
+    
+    elif any(word in msg_lower for word in ['ajuda', 'help', 'o que você faz', 'quem é você']):
+        return "Sou o AgroBot, seu assistente aqui na Agromercantil. Posso te ajudar com:\n\n• Números de faturamento e vendas\n• Informações sobre clientes\n• Dados de produtos e commodities\n• Análises de tendências\n• Insights sobre o mercado agrícola\n\nO que você gostaria de saber?"
+    
+    elif any(word in msg_lower for word in ['oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite']):
+        return "Olá! 👋 Tudo bem? Sou o AgroBot, assistente virtual da Agromercantil.\n\nEstou aqui para te ajudar com dados do sistema, insights sobre commodities ou responder dúvidas sobre nossa operação.\n\nO que posso fazer por você hoje?"
+    
+    elif any(word in msg_lower for word in ['dica', 'insight', 'análise', 'analise', 'sugestão']):
+        return "Uma dica interessante: percebi que nossos clientes do Mato Grosso estão comprando 30% mais milho este mês. Pode ser uma boa oportunidade de reforçar o estoque por lá.\n\nQuer que eu aprofunde nessa análise ou prefere ver outra região?"
+    
+    elif any(word in msg_lower for word in ['tendência', 'tendencia', 'crescimento', 'evolução']):
+        return "Nossa tendência está positiva. Crescimento de 12% no faturamento comparado ao ano passado. Os meses de março e abril foram os melhores, provavelmente pela safra de soja.\n\nQuer ver o gráfico completo de vendas mensais? Posso te mostrar os picos sazonais."
+    
+    else:
+        return "Entendi. Posso te ajudar com dados sobre faturamento, clientes, produtos ou tendências do nosso negócio.\n\nO que você gostaria de explorar? Se quiser, posso começar te mostrando os destaques do mês.
 
 # ============================================
 # APIs - DADOS

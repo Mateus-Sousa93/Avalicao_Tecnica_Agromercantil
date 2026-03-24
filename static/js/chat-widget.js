@@ -25,28 +25,33 @@
                 }
                 
                 #chat-widget-button {
-                    width: 56px;
-                    height: 56px;
-                    background: linear-gradient(135deg, #112800 0%, #253f0f 100%);
-                    border-radius: 12px 0 0 12px;
+                    width: 60px;
+                    height: 60px;
+                    background: white;
+                    border-radius: 16px 0 0 16px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
-                    box-shadow: -4px 0 20px rgba(17, 40, 0, 0.3);
+                    box-shadow: -4px 0 20px rgba(17, 40, 0, 0.25);
                     transition: all 0.3s ease;
                     border: none;
-                    border-right: 3px solid #F58220;
+                    border-right: 4px solid #F58220;
+                    padding: 8px;
+                    overflow: hidden;
                 }
                 
                 #chat-widget-button:hover {
-                    width: 64px;
-                    background: linear-gradient(135deg, #143d31 0%, #2d6b58 100%);
+                    width: 68px;
+                    transform: translateX(-4px);
+                    box-shadow: -6px 0 24px rgba(17, 40, 0, 0.35);
                 }
                 
-                #chat-widget-button .icon {
-                    color: white;
-                    font-size: 28px;
+                #chat-widget-button img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 10px;
                 }
                 
                 #chat-widget-panel {
@@ -84,6 +89,14 @@
                     display: flex;
                     align-items: center;
                     gap: 8px;
+                }
+                
+                #chat-widget-header img {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 2px solid rgba(255,255,255,0.3);
                 }
                 
                 #chat-widget-close {
@@ -259,16 +272,19 @@
             <div id="chat-widget-overlay"></div>
             
             <div id="chat-widget-container">
-                <button id="chat-widget-button" title="Assistente Virtual">
-                    <img src="{{ url_for('static', filename='images/agent.png') }}" alt="AgroBot" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+                <button id="chat-widget-button" title="Falar com AgroBot">
+                    <img src="/static/images/agent.png" alt="AgroBot">
                 </button>
             </div>
             
             <div id="chat-widget-panel">
                 <div id="chat-widget-header">
                     <h3>
-                        <span class="material-symbols-outlined">smart_toy</span>
-                        AgroBot Assistente
+                        <img src="/static/images/agent.png" alt="AgroBot">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600;">AgroBot</div>
+                            <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Analista de Commodities</div>
+                        </div>
                     </h3>
                     <button id="chat-widget-close">
                         <span class="material-symbols-outlined">close</span>
@@ -415,25 +431,64 @@
             const welcomeEl = document.createElement('div');
             welcomeEl.className = 'chat-message bot';
             welcomeEl.innerHTML = `
-                <strong>Olá! 👋</strong><br>
-                Sou o AgroBot, assistente virtual da Agromercantil.<br><br>
-                Posso ajudar com:<br>
-                • Faturamento e vendas<br>
-                • Informações de clientes<br>
-                • Dados de produtos<br>
-                • Análises e tendências
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <img src="/static/images/agent.png" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    <strong>AgroBot</strong>
+                </div>
+                Olá! 👋 Tudo bem? Sou seu assistente aqui na Agromercantil.<br><br>
+                Posso te ajudar com números de vendas, informações de clientes, dados de commodities ou insights sobre o mercado agrícola.<br><br>
+                <em>O que você gostaria de saber?</em>
             `;
             messagesDiv.appendChild(welcomeEl);
+            
+            // Adicionar sugestões iniciais
+            const suggestionsEl = document.createElement('div');
+            suggestionsEl.className = 'chat-suggestions';
+            suggestionsEl.style.marginTop = '12px';
+            suggestionsEl.innerHTML = `
+                <span class="chat-suggestion" data-msg="Qual nosso faturamento?">💰 Faturamento</span>
+                <span class="chat-suggestion" data-msg="Quantos clientes temos?">👥 Clientes</span>
+                <span class="chat-suggestion" data-msg="Top produtos vendidos">🌾 Produtos</span>
+                <span class="chat-suggestion" data-msg="Tem alguma dica?">💡 Dica do dia</span>
+            `;
+            messagesDiv.appendChild(suggestionsEl);
+            
+            // Re-attach event listeners
+            suggestionsEl.querySelectorAll('.chat-suggestion').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const msg = e.target.dataset.msg;
+                    document.getElementById('chat-widget-input').value = msg;
+                    sendMessage(e);
+                });
+            });
         } else {
-            chatHistory.forEach(msg => {
+            chatHistory.forEach((msg, index) => {
                 const msgEl = document.createElement('div');
                 msgEl.className = `chat-message ${msg.sender}`;
-                msgEl.textContent = msg.text;
+                
+                // Adicionar avatar para mensagens do bot
+                if (msg.sender === 'bot' && index > 0) {
+                    msgEl.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; opacity: 0.7;">
+                            <img src="/static/images/agent.png" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                            <span style="font-size: 11px;">AgroBot</span>
+                        </div>
+                        ${formatMessage(msg.text)}
+                    `;
+                } else {
+                    msgEl.innerHTML = formatMessage(msg.text);
+                }
+                
                 messagesDiv.appendChild(msgEl);
             });
         }
         
         scrollToBottom();
+    }
+    
+    // Formatar mensagem (converter quebras de linha)
+    function formatMessage(text) {
+        return text.replace(/\n/g, '<br>');
     }
     
     // Scroll para baixo
