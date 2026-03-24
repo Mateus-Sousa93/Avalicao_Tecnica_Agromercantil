@@ -140,7 +140,6 @@
                     </div>
                 </div>
                 
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('chat_page') }}">Assistente</a>
             </nav>
         </div>
         
@@ -286,12 +285,6 @@
         </section>
     </main>
 
-    <!-- Float Button Chatbot -->
-    <a href="{{ url_for('chat_page') }}" class="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary-dark rounded-full flex items-center justify-center elevation-2 hover:scale-105 transition-all z-50 group" title="Assistente Virtual">
-        <span class="material-symbols-outlined text-white text-2xl">smart_toy</span>
-        <span class="absolute right-full mr-3 px-2 py-1 bg-on-surface text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Assistente IA</span>
-    </a>
-
     <!-- Footer -->
     <footer class="h-6 flex items-center justify-between px-6 bg-surface text-[10px] text-outline font-label uppercase tracking-widest border-t border-outline-variant/10">
         <span>Status do Sistema: Operacional</span>
@@ -344,5 +337,8 @@
             window.location.reload();
         }, 300000);
     </script>
+
+<!-- Chat Widget -->
+<script src="{{ url_for('static', filename='js/chat-widget.js') }}"></script>
 </body>
 </html>
