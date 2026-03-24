@@ -264,13 +264,8 @@ def analise_page():
                          db_available=DB_AVAILABLE)
 
 # ============================================
-# CHATBOT
+# CHATBOT API
 # ============================================
-@app.route('/chat')
-@login_required
-def chat_page():
-    return render_template('chat.html', username=session.get('username'))
-
 @app.route('/api/chat', methods=['POST'])
 @login_required
 def chat_api():
