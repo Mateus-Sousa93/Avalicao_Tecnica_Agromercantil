@@ -273,14 +273,14 @@
             
             <div id="chat-widget-container">
                 <button id="chat-widget-button" title="Falar com AgroBot">
-                    <img src="/static/images/agent.png" alt="AgroBot">
+                    <img src="/static/images/agent.png" alt="AgroBot" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23fff%22><text x=%2212%22 y=%2216%22 text-anchor=%22middle%22 font-size=%2214%22>🤖</text></svg>'; this.style.padding='8px';">
                 </button>
             </div>
             
             <div id="chat-widget-panel">
                 <div id="chat-widget-header">
                     <h3>
-                        <img src="/static/images/agent.png" alt="AgroBot">
+                        <img src="/static/images/agent.png" alt="AgroBot" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'material-symbols-outlined\' style=\'font-size: 32px;\'>support_agent</span>';">
                         <div>
                             <div style="font-size: 16px; font-weight: 600;">AgroBot</div>
                             <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Analista de Commodities</div>

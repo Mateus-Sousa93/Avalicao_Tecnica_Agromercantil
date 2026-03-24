@@ -39,7 +39,7 @@ try:
 except ImportError:
     print("AVISO: Biblioteca google-generativeai nao instalada")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('SECRET_KEY', 'agromercantil-secret-key-2025')
 
 # Configuracao do Banco de Dados PostgreSQL
