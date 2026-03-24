@@ -2,6 +2,7 @@
 """
 Agromercantil Analytics
 Flask Full Stack Application
+Design System: Material 3 - Precision Harvest
 """
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
@@ -21,15 +22,64 @@ from sqlalchemy import create_engine, text
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'agromercantil-secret-key-2025')
 
-# Configuração do Banco de Dados PostgreSQL
-DATABASE_URL = os.environ.get(
-    'DATABASE_URL', 
-    'postgresql://agro_user:agro123456@localhost:5432/agromercantil'
-)
-engine = create_engine(DATABASE_URL)
+# Configuracao do Banco de Dados PostgreSQL
+# Local desenvolvimento
+LOCAL_DB = "postgresql://agro_user:agro123456@localhost:5432/agromercantil"
+# VPS - usar quando deployado na VPS
+VPS_DB = "postgresql://agro_user:agro123456@localhost:5432/agromercantil"
+
+DATABASE_URL = os.environ.get('DATABASE_URL', LOCAL_DB)
+
+# Flag para verificar se banco esta disponivel
+DB_AVAILABLE = False
+engine = None
+
+def check_db_connection():
+    """Verifica se consegue conectar no banco"""
+    global DB_AVAILABLE, engine
+    try:
+        if engine is None:
+            engine = create_engine(DATABASE_URL, connect_args={'connect_timeout': 3})
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        DB_AVAILABLE = True
+        return True
+    except Exception as e:
+        DB_AVAILABLE = False
+        return False
+
+# Tentar conectar na inicializacao (nao falha se nao conseguir)
+check_db_connection()
 
 # ============================================
-# AUTENTICAÇÃO
+# DADOS MOCK (para visualizacao sem banco)
+# ============================================
+MOCK_METRICS = {
+    'faturamento': 'R$ 5.2M',
+    'ticket_medio': 'R$ 18.450',
+    'contratos': 1248,
+    'clientes': 847,
+    'variacao_contratos': 'Estavel',
+    'last_update': datetime.now().strftime('%H:%M')
+}
+
+MOCK_TOP_CLIENTES = [
+    {'nome': 'Cooperativa Agricola Mato Grosso', 'valor_total': 2450000, 'segmento': 'Campeao'},
+    {'nome': 'Agropecuaria Sul LTDA', 'valor_total': 1890000, 'segmento': 'Campeao'},
+    {'nome': 'Fazenda Boa Vista', 'valor_total': 1240000, 'segmento': 'Fiel'},
+    {'nome': 'Cerealista Brasil SA', 'valor_total': 980000, 'segmento': 'Fiel'},
+    {'nome': 'Produtores Associados GO', 'valor_total': 765000, 'segmento': 'Ativo'},
+]
+
+MOCK_TOP_PRODUTOS = [
+    {'nome': 'Soja Premium (GMO)', 'total_vendas': 4250000, 'percentual': 100},
+    {'nome': 'Milho Amarelo Tipo 2', 'total_vendas': 3180000, 'percentual': 75},
+    {'nome': 'Cafe Arabica SC-17', 'total_vendas': 2150000, 'percentual': 51},
+    {'nome': 'Trigo Soft Red', 'total_vendas': 1680000, 'percentual': 40},
+]
+
+# ============================================
+# AUTENTICACAO
 # ============================================
 USERS = {
     "admin": hashlib.sha256("admin123".encode()).hexdigest(),
@@ -46,7 +96,7 @@ def login_required(f):
     return decorated_function
 
 # ============================================
-# ROTAS DE AUTENTICAÇÃO
+# ROTAS DE AUTENTICACAO
 # ============================================
 @app.route('/')
 def index():
@@ -70,7 +120,7 @@ def login():
             else:
                 error = "Senha incorreta!"
         else:
-            error = "Usuário não encontrado!"
+            error = "Usuario nao encontrado!"
     
     return render_template('login.html', error=error)
 
@@ -80,25 +130,82 @@ def logout():
     return redirect(url_for('login'))
 
 # ============================================
-# DASHBOARD
+# DASHBOARD PRINCIPAL
 # ============================================
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Métricas principais
-    metrics = get_metrics()
+    global DB_AVAILABLE
     
-    # Gráficos
-    charts = {
-        'tendencias': get_tendencias_chart(),
-        'rfv_segmentos': get_rfv_segmentos_chart(),
-        'produtos': get_produtos_chart()
-    }
+    # Verificar se banco voltou (em desenvolvimento)
+    if not DB_AVAILABLE:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            DB_AVAILABLE = True
+            print("✅ Banco de dados reconectado")
+        except:
+            pass
+    
+    if DB_AVAILABLE:
+        # Buscar metricas em tempo real
+        metrics = get_metrics()
+        top_clientes = get_top_clientes(5)
+        top_produtos = get_top_produtos(4)
+    else:
+        # Usar dados mock
+        metrics = MOCK_METRICS
+        top_clientes = MOCK_TOP_CLIENTES
+        top_produtos = MOCK_TOP_PRODUTOS
+    
+    # Gerar grafico de tendencias
+    chart_tendencias = get_tendencias_chart()
     
     return render_template('dashboard.html', 
                          username=session.get('username'),
                          metrics=metrics,
-                         charts=charts)
+                         top_clientes=top_clientes,
+                         top_produtos=top_produtos,
+                         chart_tendencias=chart_tendencias,
+                         db_available=DB_AVAILABLE)
+
+# ============================================
+# PAGINAS ADICIONAIS (placeholders)
+# ============================================
+@app.route('/rfv')
+@login_required
+def rfv_page():
+    """Pagina completa de analise RFV"""
+    if DB_AVAILABLE:
+        rfv_data = calcular_rfv()
+        data = rfv_data.to_dict('records') if not rfv_data.empty else []
+    else:
+        data = MOCK_TOP_CLIENTES
+    
+    return render_template('rfv.html',
+                         username=session.get('username'),
+                         rfv_data=data,
+                         db_available=DB_AVAILABLE)
+
+@app.route('/produtos')
+@login_required
+def produtos_page():
+    """Pagina de analise de produtos"""
+    produtos = MOCK_TOP_PRODUTOS if not DB_AVAILABLE else get_top_produtos(10)
+    return render_template('produtos.html',
+                         username=session.get('username'),
+                         produtos=produtos,
+                         db_available=DB_AVAILABLE)
+
+@app.route('/tendencias')
+@login_required
+def tendencias_page():
+    """Pagina de tendencias detalhada"""
+    chart_data = get_tendencias_chart()
+    return render_template('tendencias.html',
+                         username=session.get('username'),
+                         chart=chart_data,
+                         db_available=DB_AVAILABLE)
 
 # ============================================
 # CHATBOT
@@ -114,16 +221,25 @@ def chat_api():
     data = request.json
     message = data.get('message', '').lower()
     
-    # Respostas simples baseadas em palavras-chave
+    # Respostas baseadas em dados mock ou reais
+    if DB_AVAILABLE:
+        metrics = get_metrics()
+        top_prod = get_top_produtos(1)
+        produto = top_prod[0]['nome'] if top_prod else 'N/A'
+    else:
+        metrics = MOCK_METRICS
+        produto = MOCK_TOP_PRODUTOS[0]['nome']
+    
     responses = {
-        'faturamento': 'O faturamento total da Agromercantil é de R$ 5.2M no último ano.',
-        'cliente': 'Temos 847 clientes ativos, sendo 234 classificados como "Campeões".',
-        'produto': 'Soja é o produto mais vendido, representando 45% da receita.',
-        'commodity': 'As principais commodities são: Soja, Milho, Café, Algodão e Trigo.',
-        'ajuda': 'Posso responder sobre: faturamento, clientes, produtos, commodities e anomalias.',
+        'faturamento': f"O faturamento total e de {metrics['faturamento']}.",
+        'cliente': f"Temos {metrics['clientes']} clientes ativos no sistema.",
+        'produto': f"O produto mais vendido e {produto}.",
+        'ticket': f"O ticket medio e de {metrics['ticket_medio']}.",
+        'contrato': f"Temos {metrics['contratos']} contratos ativos.",
+        'ajuda': 'Posso responder sobre: faturamento, clientes, produtos, ticket medio e contratos.',
     }
     
-    response = "Desculpe, não entendi. Tente perguntar sobre: faturamento, clientes, produtos ou commodities."
+    response = "Desculpe, nao entendi. Tente perguntar sobre faturamento, clientes ou produtos."
     
     for key, value in responses.items():
         if key in message:
@@ -133,62 +249,116 @@ def chat_api():
     return jsonify({'response': response})
 
 # ============================================
-# API - DADOS
+# APIs - DADOS
 # ============================================
 @app.route('/api/rfv')
 @login_required
 def api_rfv():
+    if not DB_AVAILABLE:
+        return jsonify(MOCK_TOP_CLIENTES)
     df = calcular_rfv()
     return jsonify(df.to_dict('records'))
 
 @app.route('/api/tendencias')
 @login_required
 def api_tendencias():
+    if not DB_AVAILABLE:
+        return jsonify([])
     df = tendencias_mensais()
     return jsonify(df.to_dict('records'))
 
 @app.route('/api/anomalias')
 @login_required
 def api_anomalias():
+    if not DB_AVAILABLE:
+        return jsonify([])
     df = detectar_anomalias()
     return jsonify(df.to_dict('records'))
 
 @app.route('/api/inativos')
 @login_required
 def api_inativos():
+    if not DB_AVAILABLE:
+        return jsonify([])
     df = clientes_inativos()
     return jsonify(df.to_dict('records'))
 
 # ============================================
-# FUNÇÕES DE DADOS
+# FUNCOES DE DADOS
 # ============================================
 def run_query(query, params=None):
+    """Executa query SQL e retorna DataFrame"""
+    global DB_AVAILABLE
+    if not DB_AVAILABLE and not check_db_connection():
+        return pd.DataFrame()
     try:
         with engine.connect() as conn:
             result = conn.execute(text(query), params or {})
             return pd.DataFrame(result.fetchall(), columns=result.keys())
     except Exception as e:
         print(f"Erro na query: {e}")
+        DB_AVAILABLE = False
         return pd.DataFrame()
 
 def get_metrics():
-    """Retorna métricas principais do dashboard"""
+    """Retorna metricas principais do dashboard"""
+    if not DB_AVAILABLE:
+        return MOCK_METRICS
+    
     try:
         df_pedidos = run_query("""
-            SELECT COUNT(*) as total, SUM(valor_total) as valor 
-            FROM pedidos WHERE status != 'Cancelado'
+            SELECT 
+                COUNT(*) as total, 
+                SUM(valor_total) as valor,
+                AVG(valor_total) as ticket_medio
+            FROM pedidos 
+            WHERE status != 'Cancelado'
         """)
         df_clientes = run_query("SELECT COUNT(*) as total FROM clientes")
         
+        last_update = datetime.now().strftime('%H:%M')
+        faturamento = df_pedidos['valor'].iloc[0] if not df_pedidos.empty else 0
+        ticket_medio = df_pedidos['ticket_medio'].iloc[0] if not df_pedidos.empty else 0
+        
         return {
-            'faturamento': f"R$ {df_pedidos['valor'].iloc[0]/1e6:.1f}M" if not df_pedidos.empty else "R$ 0M",
+            'faturamento': f"R$ {faturamento/1e6:.1f}M" if faturamento else "R$ 0M",
+            'ticket_medio': f"R$ {ticket_medio:,.0f}".replace(',', '.') if ticket_medio else "R$ 0",
             'contratos': int(df_pedidos['total'].iloc[0]) if not df_pedidos.empty else 0,
-            'clientes': int(df_clientes['total'].iloc[0]) if not df_clientes.empty else 0
+            'clientes': int(df_clientes['total'].iloc[0]) if not df_clientes.empty else 0,
+            'variacao_contratos': 'Estavel',
+            'last_update': last_update
         }
-    except:
-        return {'faturamento': 'R$ 0M', 'contratos': 0, 'clientes': 0}
+    except Exception as e:
+        print(f"Erro em get_metrics: {e}")
+        return MOCK_METRICS
+
+def get_top_clientes(limit=5):
+    """Retorna top clientes por valor total"""
+    if not DB_AVAILABLE:
+        return MOCK_TOP_CLIENTES[:limit]
+    
+    df = calcular_rfv()
+    if df.empty:
+        return MOCK_TOP_CLIENTES[:limit]
+    
+    top = df.nlargest(limit, 'valor_total')
+    return top.to_dict('records')
+
+def get_top_produtos(limit=5):
+    """Retorna top produtos mais vendidos"""
+    if not DB_AVAILABLE:
+        return MOCK_TOP_PRODUTOS[:limit]
+    
+    df = top_produtos_db()
+    if df.empty:
+        return MOCK_TOP_PRODUTOS[:limit]
+    
+    max_valor = df['total_vendas'].max()
+    df['percentual'] = (df['total_vendas'] / max_valor * 100).round(0)
+    return df.head(limit).to_dict('records')
 
 def calcular_rfv():
+    """Questao 2: RFV - Usa CTE + Window Functions"""
     return run_query("""
     WITH ultima_compra AS (
         SELECT id_cliente, MAX(data_pedido) as ultima_data,
@@ -205,7 +375,7 @@ def calcular_rfv():
            uc.dias_desde_ultimo, uc.ultima_data, m.total_pedidos,
            m.ticket_medio, m.valor_total,
            CASE 
-               WHEN uc.dias_desde_ultimo <= 30 AND m.total_pedidos >= 5 THEN 'Campeão'
+               WHEN uc.dias_desde_ultimo <= 30 AND m.total_pedidos >= 5 THEN 'Campeao'
                WHEN uc.dias_desde_ultimo <= 60 AND m.total_pedidos >= 3 THEN 'Fiel'
                WHEN uc.dias_desde_ultimo <= 90 THEN 'Ativo'
                ELSE 'Em Risco'
@@ -217,6 +387,7 @@ def calcular_rfv():
     """)
 
 def tendencias_mensais():
+    """Questao 5: Tendencias - Usa CTE + LAG"""
     return run_query("""
     WITH mensal AS (
         SELECT DATE_TRUNC('month', data_pedido) as mes,
@@ -232,6 +403,7 @@ def tendencias_mensais():
     """)
 
 def detectar_anomalias():
+    """Questao 7: Anomalias - Usa CTE"""
     return run_query("""
     WITH soma_itens AS (
         SELECT id_pedido, SUM(subtotal) as valor_calculado
@@ -248,6 +420,7 @@ def detectar_anomalias():
     """)
 
 def clientes_inativos():
+    """Questao 6: Clientes Inativos - Usa CTE"""
     return run_query("""
     WITH ultima_atividade AS (
         SELECT id_cliente, MAX(data_pedido) as ultima_compra,
@@ -262,7 +435,8 @@ def clientes_inativos():
     ORDER BY ua.dias_inativo DESC;
     """)
 
-def top_produtos():
+def top_produtos_db():
+    """Questao 4: Top 5 Produtos - Usa CTE"""
     return run_query("""
     WITH receita_produtos AS (
         SELECT p.id_produto, p.nome,
@@ -275,90 +449,85 @@ def top_produtos():
         GROUP BY p.id_produto, p.nome
     )
     SELECT id_produto, nome, ROUND(total_receita, 2) as total_vendas
-    FROM receita_produtos ORDER BY total_receita DESC LIMIT 5;
+    FROM receita_produtos ORDER BY total_receita DESC;
     """)
 
 # ============================================
-# GRÁFICOS PLOTLY
+# GRAFICOS PLOTLY
 # ============================================
 def get_tendencias_chart():
-    df = tendencias_mensais()
-    if df.empty:
-        return None
+    """Gera grafico de tendencias em formato Plotly"""
+    
+    # Dados mock para o grafico (quando nao tem banco)
+    mock_data = {
+        'mes_ano': ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+        'vendas': [2.1, 2.3, 2.8, 3.2, 3.5, 3.8, 4.1, 4.5, 4.8, 5.1, 5.3, 5.2],
+        'crescimento': [0, 9.5, 21.7, 14.3, 9.4, 8.6, 7.9, 9.8, 6.7, 6.3, 3.9, -1.9]
+    }
+    
+    if DB_AVAILABLE:
+        df = tendencias_mensais()
+        if not df.empty:
+            df = df.iloc[::-1]  # Ordem cronologica
+            mock_data = {
+                'mes_ano': df['mes_ano'].tolist(),
+                'vendas': [v/1e6 for v in df['vendas'].tolist()],
+                'crescimento': df['crescimento'].fillna(0).tolist()
+            }
     
     fig = go.Figure()
+    
+    # Barra de vendas
     fig.add_trace(go.Bar(
-        x=df['mes_ano'], 
-        y=df['vendas'], 
-        name='Vendas',
+        x=mock_data['mes_ano'], 
+        y=mock_data['vendas'], 
+        name='Vendas (R$ M)',
         marker_color='#112800'
     ))
+    
+    # Linha de crescimento
     fig.add_trace(go.Scatter(
-        x=df['mes_ano'], 
-        y=df['crescimento'], 
-        name='% Crescimento',
+        x=mock_data['mes_ano'], 
+        y=mock_data['crescimento'], 
+        name='Crescimento %',
         yaxis='y2',
-        line=dict(color='#F58220', width=3)
+        line=dict(color='#F58220', width=3),
+        mode='lines+markers'
     ))
     
     fig.update_layout(
-        yaxis2=dict(overlaying='y', side='right', title='%'),
+        yaxis=dict(
+            title='Vendas (R$ M)',
+            tickprefix='R$ ',
+            gridcolor='rgba(116, 121, 108, 0.1)'
+        ),
+        yaxis2=dict(
+            overlaying='y',
+            side='right',
+            title='Crescimento %',
+            tickformat='.1f',
+            ticksuffix='%',
+            gridcolor='rgba(116, 121, 108, 0.05)'
+        ),
+        xaxis=dict(
+            gridcolor='rgba(116, 121, 108, 0.1)'
+        ),
         template='plotly_white',
-        height=400,
-        margin=dict(l=40, r=40, t=40, b=40),
-        legend=dict(orientation='h', yanchor='bottom', y=1.02)
+        margin=dict(l=50, r=50, t=40, b=40),
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='right',
+            x=1,
+            font=dict(size=10)
+        ),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        hovermode='x unified'
     )
     
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-
-def get_rfv_segmentos_chart():
-    df = calcular_rfv()
-    if df.empty:
-        return None
-    
-    dist = df['segmento'].value_counts()
-    colors = {'Campeão': '#112800', 'Fiel': '#436900', 'Ativo': '#4A5568', 'Em Risco': '#E53E3E'}
-    
-    fig = px.pie(
-        values=dist.values, 
-        names=dist.index,
-        color=dist.index,
-        color_discrete_map=colors,
-        hole=0.4
-    )
-    
-    fig.update_layout(
-        template='plotly_white',
-        height=350,
-        showlegend=True,
-        legend=dict(orientation='h', yanchor='bottom', y=-0.1)
-    )
-    
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-
-def get_produtos_chart():
-    df = top_produtos()
-    if df.empty:
-        return None
-    
-    fig = px.bar(
-        df, 
-        x='total_vendas', 
-        y='nome',
-        orientation='h',
-        color_discrete_sequence=['#112800']
-    )
-    
-    fig.update_layout(
-        template='plotly_white',
-        height=300,
-        margin=dict(l=40, r=40, t=20, b=40),
-        showlegend=False,
-        xaxis_title='Total Vendas (R$)',
-        yaxis_title=''
-    )
-    
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.loads(json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder))
 
 # ============================================
 # MAIN

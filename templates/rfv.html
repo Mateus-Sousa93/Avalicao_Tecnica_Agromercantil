@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>RFV | Agromercantil Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#112800",
+                        "primary-dark": "#143d31",
+                        "secondary": "#436900",
+                        "tertiary": "#F58220",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#cbedab",
+                        "on-primary-container": "#0c2000",
+                        "secondary-container": "#b9f467",
+                        "on-secondary-container": "#112000",
+                        "tertiary-container": "#ffddb4",
+                        "on-tertiary-container": "#291800",
+                        "error": "#ba1a1a",
+                        "surface": "#fafaf5",
+                        "on-surface": "#1a1c19",
+                        "surface-variant": "#e4e2e1",
+                        "on-surface-variant": "#44483e",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f4f4ef",
+                        "surface-container": "#eeeee9",
+                        "surface-container-high": "#e8e8e3",
+                        "outline": "#74796c",
+                        "outline-variant": "#c4c8ba"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Work Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fafaf5; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .font-label { font-family: 'Work Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 10px; }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
+        .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
+
+    <!-- Header -->
+    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
+        <div class="flex items-center space-x-8 h-full">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">eco</span>
+                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
+            </div>
+            <nav class="flex items-center h-full space-x-1">
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('chat_page') }}">Assistente</a>
+            </nav>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+                <span class="material-symbols-outlined text-lg">person</span>
+                <span class="font-medium">{{ username }}</span>
+            </div>
+            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-sm hover:bg-error/5" title="Sair">
+                <span class="material-symbols-outlined">logout</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
+        
+        <!-- KPI Cards -->
+        <section class="grid grid-cols-4 gap-4 flex-none">
+            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #112800;">
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Total Clientes</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos.values()|sum if segmentos else 847 }}</span>
+                </div>
+            </div>
+            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #436900;">
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Campeões</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos.Campeao if segmentos else 45 }}</span>
+                    <span class="text-[11px] font-medium text-secondary">+5.2%</span>
+                </div>
+            </div>
+            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #F58220;">
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Fiéis</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos.Fiel if segmentos else 128 }}</span>
+                    <span class="text-[11px] font-medium text-secondary">+8.1%</span>
+                </div>
+            </div>
+            <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #ba1a1a;">
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Em Risco</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">{{ segmentos['Em Risco'] if segmentos else 67 }}</span>
+                    <span class="text-[11px] font-medium text-error">-2.4%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Grid -->
+        <section class="flex-1 grid grid-cols-5 gap-4 min-h-0">
+            <!-- Left: Chart (40%) -->
+            <div class="col-span-2 bg-surface-container-lowest elevation-1 flex flex-col p-5">
+                <h2 class="text-lg font-bold font-headline text-on-surface mb-4">Distribuição por Segmento</h2>
+                <div class="flex-1 relative" id="chart-segmentos"></div>
+            </div>
+
+            <!-- Right: Table (60%) -->
+            <div class="col-span-3 bg-surface-container-lowest elevation-1 flex flex-col p-5 overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold font-headline text-on-surface">Top Clientes</h2>
+                    <span class="text-xs text-on-surface-variant">Últimos 12 meses</span>
+                </div>
+                <div class="flex-1 overflow-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="sticky top-0 bg-surface-container-lowest text-on-surface-variant border-b border-outline-variant/20">
+                            <tr>
+                                <th class="pb-3 font-semibold font-label">Cliente</th>
+                                <th class="pb-3 font-semibold font-label text-right">Pedidos</th>
+                                <th class="pb-3 font-semibold font-label text-right">Ticket Médio</th>
+                                <th class="pb-3 font-semibold font-label text-right">Valor Total</th>
+                                <th class="pb-3 font-semibold font-label text-center">Segmento</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline-variant/10">
+                            {% for cliente in rfv_data %}
+                            <tr class="hover:bg-surface-container-low transition-colors">
+                                <td class="py-3 font-medium text-on-surface">{{ cliente.nome }}</td>
+                                <td class="py-3 text-right font-body">{{ cliente.total_pedidos }}</td>
+                                <td class="py-3 text-right font-body">R$ {{ "{:,.0f}".format(cliente.ticket_medio).replace(",", ".") }}</td>
+                                <td class="py-3 text-right font-body font-semibold">R$ {{ "{:,.0f}".format(cliente.valor_total).replace(",", ".") }}</td>
+                                <td class="py-3 text-center">
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-medium
+                                        {% if cliente.segmento == 'Campeao' %}bg-secondary-container text-on-secondary-container
+                                        {% elif cliente.segmento == 'Fiel' %}bg-primary-container text-on-primary-container
+                                        {% elif cliente.segmento == 'Ativo' %}bg-surface-container-high text-on-surface-variant
+                                        {% else %}bg-tertiary-container text-on-tertiary-container{% endif %}">
+                                        {{ cliente.segmento }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="h-6 flex items-center justify-between px-6 bg-surface text-[10px] text-outline font-label uppercase tracking-widest border-t border-outline-variant/10">
+        <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full {% if db_available %}bg-secondary{% else %}bg-tertiary{% endif %}"></span>
+            <span>{% if db_available %}Dados em tempo real{% else %}Modo demonstração{% endif %}</span>
+        </div>
+        <span>Agromercantil Analytics v2.4.0</span>
+    </footer>
+
+    <script>
+        // Gráfico de Pizza - Distribuição de Segmentos
+        var segmentosData = [{
+            values: [45, 128, 320, 67],
+            labels: ['Campeão', 'Fiel', 'Ativo', 'Em Risco'],
+            type: 'pie',
+            hole: 0.4,
+            marker: {
+                colors: ['#b9f467', '#cbedab', '#e8e8e3', '#ffddb4']
+            },
+            textinfo: 'label+percent',
+            textposition: 'outside'
+        }];
+
+        var layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            margin: { l: 20, r: 20, t: 20, b: 20 },
+            showlegend: false,
+            font: { family: 'Inter, sans-serif', size: 11 }
+        };
+
+        Plotly.newPlot('chart-segmentos', segmentosData, layout, {responsive: true, displayModeBar: false});
+    </script>
+</body>
+</html>
