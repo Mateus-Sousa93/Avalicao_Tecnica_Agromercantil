@@ -388,44 +388,8 @@ def get_context_data():
 - Última atualização: {metrics['last_update']}"""
 
 def get_local_response(message):
-    """Respostas locais quando Gemini não disponível"""
-    msg_lower = message.lower()
-    
-    if DB_AVAILABLE:
-        metrics = get_metrics()
-    else:
-        metrics = MOCK_METRICS
-    
-    # Respostas contextuais
-    if any(word in msg_lower for word in ['faturamento', 'venda', 'receita', 'faturou']):
-        return f"Estamos com {metrics['faturamento']} este ano. A soja continua sendo nossa estrela, representando quase metade desse valor.\n\nQuer que eu te mostre como isso está distribuído por região? Posso te dar uma dica sobre onde estão as maiores oportunidades."
-    
-    elif any(word in msg_lower for word in ['cliente', 'clientes', 'quem compra']):
-        return f"Temos {metrics['clientes']} clientes ativos no sistema. A maioria são cooperativas e produtores do Centro-Oeste e Sul.\n\nVocê quer ver quem são os clientes 'Campeões' que mais compram? Posso te mostrar o ranking RFV."
-    
-    elif any(word in msg_lower for word in ['produto', 'commodity', 'soja', 'milho', 'café']):
-        return f"Soja Premium é nosso carro-chefe, seguido de milho e café. Juntos representam mais de 70% do nosso faturamento.\n\nQuer saber quais produtos estão com maior crescimento este mês?"
-    
-    elif any(word in msg_lower for word in ['ticket', 'médio', 'ticket medio']):
-        return f"Nosso ticket médio está em {metrics['ticket_medio']}. É um valor bom para o mercado de commodities, mostra que estamos fechando contratos significativos.\n\nPosso te mostrar como isso varia por tipo de cliente?"
-    
-    elif any(word in msg_lower for word in ['contrato', 'contratos', 'pedido', 'vendas']):
-        return f"Temos {metrics['contratos']} contratos ativos. A média está em torno de 100 contratos por mês, o que é saudável para nossa operação.\n\nQuer ver a tendência dos últimos meses? Posso mostrar o crescimento mês a mês."
-    
-    elif any(word in msg_lower for word in ['ajuda', 'help', 'o que você faz', 'quem é você']):
-        return "Sou o AgroBot, seu assistente aqui na Agromercantil. Posso te ajudar com:\n\n• Números de faturamento e vendas\n• Informações sobre clientes\n• Dados de produtos e commodities\n• Análises de tendências\n• Insights sobre o mercado agrícola\n\nO que você gostaria de saber?"
-    
-    elif any(word in msg_lower for word in ['oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite']):
-        return "Olá! 👋 Tudo bem? Sou o AgroBot, assistente virtual da Agromercantil.\n\nEstou aqui para te ajudar com dados do sistema, insights sobre commodities ou responder dúvidas sobre nossa operação.\n\nO que posso fazer por você hoje?"
-    
-    elif any(word in msg_lower for word in ['dica', 'insight', 'análise', 'analise', 'sugestão']):
-        return "Uma dica interessante: percebi que nossos clientes do Mato Grosso estão comprando 30% mais milho este mês. Pode ser uma boa oportunidade de reforçar o estoque por lá.\n\nQuer que eu aprofunde nessa análise ou prefere ver outra região?"
-    
-    elif any(word in msg_lower for word in ['tendência', 'tendencia', 'crescimento', 'evolução']):
-        return "Nossa tendência está positiva. Crescimento de 12% no faturamento comparado ao ano passado. Os meses de março e abril foram os melhores, provavelmente pela safra de soja.\n\nQuer ver o gráfico completo de vendas mensais? Posso te mostrar os picos sazonais."
-    
-    else:
-        return "Entendi. Posso te ajudar com dados sobre faturamento, clientes, produtos ou tendências do nosso negócio.\n\nO que você gostaria de explorar? Se quiser, posso começar te mostrando os destaques do mês."
+    """Fallback simples quando Gemini nao disponivel"""
+    return "Ops! Meu sistema de IA esta temporariamente indisponivel. Por favor, tente novamente em alguns segundos, ou verifique os dados diretamente no dashboard."
 
 # ============================================
 # APIs - DADOS
