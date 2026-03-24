@@ -126,6 +126,20 @@
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
+                
+                <!-- Dropdown Análises -->
+                <div class="relative group">
+                    <button class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1 flex items-center gap-1">
+                        Análises
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low first:rounded-t-lg" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low last:rounded-b-lg" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
+                    </div>
+                </div>
+                
                 <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('chat_page') }}">Assistente</a>
             </nav>
         </div>
@@ -271,6 +285,12 @@
             </div>
         </section>
     </main>
+
+    <!-- Float Button Chatbot -->
+    <a href="{{ url_for('chat_page') }}" class="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary-dark rounded-full flex items-center justify-center elevation-2 hover:scale-105 transition-all z-50 group" title="Assistente Virtual">
+        <span class="material-symbols-outlined text-white text-2xl">smart_toy</span>
+        <span class="absolute right-full mr-3 px-2 py-1 bg-on-surface text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Assistente IA</span>
+    </a>
 
     <!-- Footer -->
     <footer class="h-6 flex items-center justify-between px-6 bg-surface text-[10px] text-outline font-label uppercase tracking-widest border-t border-outline-variant/10">

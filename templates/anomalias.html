@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Anomalias | Agromercantil Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#112800",
+                        "secondary": "#436900",
+                        "tertiary": "#F58220",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "surface": "#fafaf5",
+                        "on-surface": "#1a1c19",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f4f4ef",
+                        "outline": "#74796c"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Work Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fafaf5; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .font-label { font-family: 'Work Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; vertical-align: middle; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c4c8ba; border-radius: 10px; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
+        .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
+
+    <!-- Header -->
+    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
+        <div class="flex items-center space-x-8 h-full">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">eco</span>
+                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
+            </div>
+            <nav class="flex items-center h-full space-x-1">
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
+                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('chat_page') }}">Assistente</a>
+            </nav>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+                <span class="material-symbols-outlined text-lg">person</span>
+                <span class="font-medium">{{ username }}</span>
+            </div>
+            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-sm hover:bg-error/5" title="Sair">
+                <span class="material-symbols-outlined">logout</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
+        
+        <!-- Alert Section -->
+        <section class="flex-none bg-error-container text-on-error-container p-4 rounded-lg flex items-center gap-3">
+            <span class="material-symbols-outlined text-error text-2xl">warning</span>
+            <div>
+                <h2 class="font-semibold">{{ anomalias|length }} contratos com divergências detectadas</h2>
+                <p class="text-sm opacity-80">Valor total registrado não corresponde à soma dos itens</p>
+            </div>
+        </section>
+
+        <!-- Table Section -->
+        <section class="flex-1 bg-surface-container-lowest elevation-1 flex flex-col p-5 overflow-hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold font-headline text-on-surface">Detalhamento das Anomalias</h2>
+                <button class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-error hover:bg-error/5 rounded-md transition-colors">
+                    <span class="material-symbols-outlined text-sm">download</span>
+                    Exportar Relatório
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="sticky top-0 bg-surface-container-lowest text-on-surface-variant border-b border-outline-variant/20">
+                        <tr>
+                            <th class="pb-3 font-semibold font-label">Pedido</th>
+                            <th class="pb-3 font-semibold font-label">Data</th>
+                            <th class="pb-3 font-semibold font-label">Cliente</th>
+                            <th class="pb-3 font-semibold font-label text-right">Valor Registrado</th>
+                            <th class="pb-3 font-semibold font-label text-right">Valor Calculado</th>
+                            <th class="pb-3 font-semibold font-label text-right">Divergência</th>
+                            <th class="pb-3 font-semibold font-label text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/10">
+                        {% for anomalia in anomalias %}
+                        <tr class="hover:bg-surface-container-low transition-colors">
+                            <td class="py-3 font-semibold text-primary">#{{ anomalia.id_pedido }}</td>
+                            <td class="py-3 text-on-surface-variant">{{ anomalia.data_pedido }}</td>
+                            <td class="py-3 text-on-surface">{{ anomalia.cliente }}</td>
+                            <td class="py-3 text-right font-mono">R$ {{ "{:,.2f}".format(anomalia.registrado).replace(".", "_").replace(",", ".").replace("_", ",") }}</td>
+                            <td class="py-3 text-right font-mono">R$ {{ "{:,.2f}".format(anomalia.valor_calculado).replace(".", "_").replace(",", ".").replace("_", ",") }}</td>
+                            <td class="py-3 text-right font-mono font-semibold text-error">R$ {{ "{:,.2f}".format(anomalia.diferenca).replace(".", "_").replace(",", ".").replace("_", ",") }}</td>
+                            <td class="py-3 text-center">
+                                <span class="px-2 py-1 text-[10px] font-medium bg-error/10 text-error rounded-full">Pendente</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Float Button Chatbot -->
+    <a href="{{ url_for('chat_page') }}" class="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary-dark rounded-full flex items-center justify-center elevation-2 hover:scale-105 transition-all z-50 group" title="Assistente Virtual">
+        <span class="material-symbols-outlined text-white text-2xl">smart_toy</span>
+        <span class="absolute right-full mr-3 px-2 py-1 bg-on-surface text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Assistente IA</span>
+    </a>
+
+    <!-- Footer -->
+    <footer class="h-6 flex items-center justify-between px-6 bg-surface text-[10px] text-outline font-label uppercase tracking-widest border-t border-outline-variant/10">
+        <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full {% if db_available %}bg-secondary{% else %}bg-tertiary{% endif %}"></span>
+            <span>{% if db_available %}Dados em tempo real{% else %}Modo demonstração{% endif %}</span>
+        </div>
+        <span>Agromercantil Analytics v2.4.0</span>
+    </footer>
+</body>
+</html>

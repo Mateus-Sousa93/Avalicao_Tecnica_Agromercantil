@@ -202,9 +202,65 @@ def produtos_page():
 def tendencias_page():
     """Pagina de tendencias detalhada"""
     chart_data = get_tendencias_chart()
+    tend_data = tendencias_mensais().to_dict('records') if DB_AVAILABLE else []
     return render_template('tendencias.html',
                          username=session.get('username'),
+                         tendencias=tend_data,
                          chart=chart_data,
+                         db_available=DB_AVAILABLE)
+
+@app.route('/inativos')
+@login_required
+def inativos_page():
+    """Pagina de clientes inativos - Questao 6"""
+    if DB_AVAILABLE:
+        inativos = clientes_inativos().to_dict('records')
+    else:
+        inativos = [
+            {'nome': 'Fazenda Sao Joao', 'tipo_cliente': 'Produtor', 'regiao': 'Mato Grosso', 'dias_inativo': 245, 'ultima_compra': '2024-07-15'},
+            {'nome': 'Cooperativa Oeste', 'tipo_cliente': 'Cooperativa', 'regiao': 'Goias', 'dias_inativo': 198, 'ultima_compra': '2024-09-02'},
+            {'nome': 'Agropecuaria Norte', 'tipo_cliente': 'Empresa', 'regiao': 'Parana', 'dias_inativo': 312, 'ultima_compra': '2024-05-20'},
+            {'nome': 'Fazenda Primavera', 'tipo_cliente': 'Produtor', 'regiao': 'Bahia', 'dias_inativo': 189, 'ultima_compra': '2024-09-18'},
+        ]
+    
+    return render_template('inativos.html',
+                         username=session.get('username'),
+                         inativos=inativos,
+                         db_available=DB_AVAILABLE)
+
+@app.route('/anomalias')
+@login_required
+def anomalias_page():
+    """Pagina de anomalias - Questao 7"""
+    if DB_AVAILABLE:
+        anomalias = detectar_anomalias().to_dict('records')
+    else:
+        anomalias = [
+            {'id_pedido': 1542, 'data_pedido': '2024-03-15', 'cliente': 'Cooperativa MT', 'registrado': 45000.00, 'valor_calculado': 42500.00, 'diferenca': 2500.00},
+            {'id_pedido': 1621, 'data_pedido': '2024-03-18', 'cliente': 'Fazenda Sul', 'registrado': 12800.00, 'valor_calculado': 15600.00, 'diferenca': 2800.00},
+            {'id_pedido': 1893, 'data_pedido': '2024-04-02', 'cliente': 'Cerealista BR', 'registrado': 89000.00, 'valor_calculado': 87500.00, 'diferenca': 1500.00},
+        ]
+    
+    return render_template('anomalias.html',
+                         username=session.get('username'),
+                         anomalias=anomalias,
+                         db_available=DB_AVAILABLE)
+
+@app.route('/analise')
+@login_required
+def analise_page():
+    """Pagina de analise exploratoria - Questao Python"""
+    # Dados para os graficos
+    charts = {
+        'histogram': get_histogram_data(),
+        'boxplot': get_boxplot_data(),
+        'scatter': get_scatter_data(),
+        'correlation': get_correlation_data()
+    }
+    
+    return render_template('analise.html',
+                         username=session.get('username'),
+                         charts=charts,
                          db_available=DB_AVAILABLE)
 
 # ============================================
@@ -451,6 +507,52 @@ def top_produtos_db():
     SELECT id_produto, nome, ROUND(total_receita, 2) as total_vendas
     FROM receita_produtos ORDER BY total_receita DESC;
     """)
+
+# ============================================
+# DADOS PARA ANALISE EXPLORATORIA
+# ============================================
+def get_histogram_data():
+    """Dados para histograma de distribuicao de valores"""
+    # Mock data - em producao viria do banco
+    return {
+        'bins': ['0-10k', '10-50k', '50-100k', '100-500k', '500k+'],
+        'counts': [45, 128, 89, 34, 12]
+    }
+
+def get_boxplot_data():
+    """Dados para box plot por segmento"""
+    return {
+        'segmentos': ['Campeao', 'Fiel', 'Ativo', 'Em Risco'],
+        'data': [
+            [45000, 52000, 48000, 61000, 55000, 58000, 49000],  # Campeao
+            [35000, 28000, 42000, 38000, 31000, 36000, 39000],  # Fiel
+            [25000, 18000, 22000, 28000, 15000, 19000, 21000],  # Ativo
+            [12000, 8000, 15000, 11000, 9000, 5000, 7000],      # Em Risco
+        ]
+    }
+
+def get_scatter_data():
+    """Dados para scatter plot valor vs quantidade"""
+    import random
+    random.seed(42)
+    pontos = []
+    for i in range(50):
+        qtd = random.randint(1, 20)
+        valor = qtd * random.uniform(2000, 5000) + random.uniform(-5000, 5000)
+        pontos.append({'x': qtd, 'y': round(valor, 2)})
+    return pontos
+
+def get_correlation_data():
+    """Dados para heatmap de correlacao"""
+    return {
+        'variables': ['Valor', 'Quantidade', 'Ticket', 'Frequencia'],
+        'matrix': [
+            [1.0, 0.85, 0.92, 0.45],
+            [0.85, 1.0, 0.65, 0.38],
+            [0.92, 0.65, 1.0, 0.52],
+            [0.45, 0.38, 0.52, 1.0]
+        ]
+    }
 
 # ============================================
 # GRAFICOS PLOTLY
