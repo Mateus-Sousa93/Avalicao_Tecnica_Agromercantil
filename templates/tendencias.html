@@ -42,13 +42,13 @@
         .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); }
         .elevation-1 { box-shadow: 0 1px 3px rgba(26, 28, 25, 0.05); }
         .elevation-2 { box-shadow: 0 4px 12px rgba(26, 28, 25, 0.08); }
-        
-        /* Tabs */
+
+        /* Tabs - BUG 2/3 FIX: active drives display:flex so flex layout propagates into children */
         .tab-btn { @apply px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all border-b-2 border-transparent; }
         .tab-btn.active { @apply text-primary border-primary bg-surface-container-low; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
+        .tab-content.active { display: flex; flex-direction: column; height: 100%; }
+
         /* Range slider */
         input[type=range] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #c4c8ba; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #112800; cursor: pointer; }
@@ -57,41 +57,13 @@
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
-        <div class="flex items-center space-x-8 h-full">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">eco</span>
-                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
-            </div>
-            <nav class="flex items-center h-full space-x-1">
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
-                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
-                <div class="relative group">
-                    <button class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1 flex items-center gap-1">
-                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
-                    </button>
-                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <div class="flex items-center gap-4">
-            <span class="text-sm text-on-surface-variant">{{ username }}</span>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
-        </div>
-    </header>
+    {% set active_page = 'tendencias' %}{% include '_nav.html' %}
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden">
-        
-        <!-- Page Header -->
-        <div class="bg-surface-container-lowest elevation-1 px-6 py-3">
+    <!-- Main Content - BUG 2 FIX: added min-h-0 so flex children can shrink below content size -->
+    <main class="flex-1 flex flex-col overflow-hidden min-h-0">
+
+        <!-- Page Header - flex-none so it never shrinks -->
+        <div class="flex-none bg-surface-container-lowest elevation-1 px-6 py-3">
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-2xl font-bold font-headline text-on-surface">Análise de Tendências</h1>
@@ -117,8 +89,8 @@
             </div>
         </div>
 
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-4 gap-4 px-6 py-4 bg-surface">
+        <!-- KPI Cards - flex-none so they never shrink -->
+        <div class="flex-none grid grid-cols-4 gap-4 px-6 py-4 bg-surface">
             <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl border-l-4 border-primary">
                 <p class="text-xs text-on-surface-variant uppercase">Vendas Período</p>
                 <p class="text-2xl font-bold" id="kpi-vendas">-</p>
@@ -141,75 +113,75 @@
             </div>
         </div>
 
-        <!-- Tabs Navigation -->
-        <div class="flex border-b border-outline-variant/20 bg-surface-container-low px-6">
-            <button class="tab-btn active" onclick="switchTab('geral')">
+        <!-- Tabs Navigation - flex-none so it never shrinks -->
+        <div class="flex-none flex border-b border-outline-variant/20 bg-surface-container-low px-6">
+            <button class="tab-btn active" onclick="switchTab('geral', event)">
                 <span class="material-symbols-outlined text-sm mr-1">trending_up</span> Visão Geral
             </button>
-            <button class="tab-btn" onclick="switchTab('comparativo')">
+            <button class="tab-btn" onclick="switchTab('comparativo', event)">
                 <span class="material-symbols-outlined text-sm mr-1">stacked_line_chart</span> Comparativo Anual
             </button>
-            <button class="tab-btn" onclick="switchTab('safras')">
+            <button class="tab-btn" onclick="switchTab('safras', event)">
                 <span class="material-symbols-outlined text-sm mr-1">agriculture</span> Por Safra
             </button>
-            <button class="tab-btn" onclick="switchTab('tabela')">
+            <button class="tab-btn" onclick="switchTab('tabela', event)">
                 <span class="material-symbols-outlined text-sm mr-1">table_chart</span> Dados Detalhados
             </button>
         </div>
 
-        <!-- Tab Contents -->
-        <div class="flex-1 overflow-auto p-6">
-            
-            <!-- Geral Tab -->
-            <div id="tab-geral" class="tab-content active">
-                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5 mb-6">
-                    <div class="flex justify-between items-center mb-4">
+        <!-- Tab Contents wrapper - BUG 2 FIX: flex-1 overflow-hidden min-h-0; no overflow-auto, no padding here -->
+        <div class="flex-1 overflow-hidden min-h-0">
+
+            <!-- BUG 3 FIX: Visão Geral - flex column with flex:3 top row and flex:2 bottom row, both min-h-0 -->
+            <div id="tab-geral" class="tab-content active" style="display:flex; flex-direction:column; height:100%; gap:12px; padding:16px;">
+                <div style="flex:3; min-height:0;" class="bg-surface-container-lowest elevation-1 rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-2">
                         <h3 class="font-bold">Evolução Mensal de Vendas</h3>
                         <div class="flex gap-2">
                             <button onclick="toggleSerie('vendas')" class="px-3 py-1 text-xs rounded-full bg-primary text-white">Vendas</button>
                             <button onclick="toggleSerie('contratos')" class="px-3 py-1 text-xs rounded-full bg-secondary text-white">Contratos</button>
                         </div>
                     </div>
-                    <div id="chart-evolucao" style="height: 400px;"></div>
+                    <div id="chart-evolucao" style="height:calc(100% - 36px)"></div>
                 </div>
-                
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
-                        <h3 class="font-bold mb-4">Crescimento Mensal (%)</h3>
-                        <div id="chart-crescimento"></div>
+                <div style="flex:2; min-height:0; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div class="bg-surface-container-lowest elevation-1 rounded-xl p-4">
+                        <h3 class="text-sm font-bold mb-2">Crescimento Mensal (%)</h3>
+                        <div id="chart-crescimento" style="height:calc(100% - 28px)"></div>
                     </div>
-                    <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
-                        <h3 class="font-bold mb-4">Acumulado Anual</h3>
-                        <div id="chart-acumulado"></div>
+                    <div class="bg-surface-container-lowest elevation-1 rounded-xl p-4">
+                        <h3 class="text-sm font-bold mb-2">Acumulado Anual</h3>
+                        <div id="chart-acumulado" style="height:calc(100% - 28px)"></div>
                     </div>
                 </div>
             </div>
 
             <!-- Comparativo Tab -->
-            <div id="tab-comparativo" class="tab-content">
-                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5 mb-6">
+            <div id="tab-comparativo" class="tab-content" style="gap:12px; padding:16px;">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5" style="flex:1; min-height:0;">
                     <h3 class="font-bold mb-4">Comparativo 2023 vs 2024</h3>
-                    <div id="chart-comparativo"></div>
+                    <div id="chart-comparativo" style="height:calc(100% - 44px)"></div>
                 </div>
-                <div class="grid grid-cols-3 gap-4">
+                <!-- BUG 4 FIX: initialised to '-'; real values populated by renderComparativo() -->
+                <div class="flex-none grid grid-cols-3 gap-4">
                     <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl text-center">
                         <p class="text-sm text-on-surface-variant">Crescimento YoY</p>
-                        <p class="text-3xl font-bold text-secondary" id="comp-yoy">+15.3%</p>
+                        <p class="text-3xl font-bold text-secondary" id="comp-yoy">-</p>
                     </div>
                     <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl text-center">
                         <p class="text-sm text-on-surface-variant">Melhor Mês</p>
-                        <p class="text-3xl font-bold text-primary" id="comp-melhor">Março</p>
+                        <p class="text-3xl font-bold text-primary" id="comp-melhor">-</p>
                     </div>
                     <div class="bg-surface-container-lowest elevation-1 p-4 rounded-xl text-center">
                         <p class="text-sm text-on-surface-variant">Projeção Anual</p>
-                        <p class="text-3xl font-bold text-tertiary" id="comp-proj">R$ 62M</p>
+                        <p class="text-3xl font-bold text-tertiary" id="comp-proj">-</p>
                     </div>
                 </div>
             </div>
 
             <!-- Safras Tab -->
-            <div id="tab-safras" class="tab-content">
-                <div class="grid grid-cols-2 gap-6">
+            <div id="tab-safras" class="tab-content" style="gap:12px; padding:16px;">
+                <div class="flex-none grid grid-cols-2 gap-6">
                     <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
                         <h3 class="font-bold mb-4">Volume por Safra</h3>
                         <div id="chart-safras"></div>
@@ -219,7 +191,7 @@
                         <div id="chart-precos"></div>
                     </div>
                 </div>
-                <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl mt-6">
+                <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl" style="flex:1; min-height:0; overflow-y:auto;">
                     <h3 class="font-bold mb-4">Calendário de Safras</h3>
                     <div class="grid grid-cols-12 gap-2 text-center text-sm">
                         <div class="p-3 rounded bg-secondary text-white">Jan<br><small>Colheita Soja</small></div>
@@ -239,9 +211,9 @@
             </div>
 
             <!-- Tabela Tab -->
-            <div id="tab-tabela" class="tab-content">
-                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5">
-                    <div class="overflow-auto" style="max-height: 500px;">
+            <div id="tab-tabela" class="tab-content" style="gap:12px; padding:16px;">
+                <div class="bg-surface-container-lowest elevation-1 rounded-xl p-5" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                    <div class="overflow-auto" style="flex:1; min-height:0;">
                         <table class="w-full text-sm" id="tabela-dados">
                             <thead class="sticky top-0 bg-surface-container-low">
                                 <tr class="border-b-2 border-primary">
@@ -266,17 +238,21 @@
     <script>
         let tendenciasData = [];
 
-        $(document).ready(function() {
+        // BUG 1 FIX: replaced jQuery $(document).ready with native DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
             carregarDados();
         });
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.closest('.tab-btn').classList.add('active');
+        // BUG 2/3 FIX: switchTab now receives event explicitly from onclick="switchTab('x', event)"
+        // Toggling the active class is enough — CSS rule drives display:flex for active tabs
+        function switchTab(tabName, evt) {
+            document.querySelectorAll('.tab-btn').forEach(function(btn) { btn.classList.remove('active'); });
+            document.querySelectorAll('.tab-content').forEach(function(content) { content.classList.remove('active'); });
+
+            var btn = evt ? evt.target.closest('.tab-btn') : document.querySelector('.tab-btn');
+            if (btn) btn.classList.add('active');
             document.getElementById('tab-' + tabName).classList.add('active');
-            
+
             if (tabName === 'comparativo') renderComparativo();
             if (tabName === 'safras') renderSafras();
             if (tabName === 'tabela') renderTabela();
@@ -286,108 +262,177 @@
             fetch('/api/tendencias')
                 .then(r => r.json())
                 .then(data => {
+                    if (!data || !data.length) return;
                     tendenciasData = data;
                     atualizarKPIs(data);
                     renderEvolucao(data);
                     renderCrescimento(data);
                     renderAcumulado(data);
-                });
+                })
+                .catch(e => console.error('Erro tendencias:', e));
         }
 
         function atualizarKPIs(data) {
             if (!data || data.length === 0) return;
-            
-            const totalVendas = data.reduce((a, b) => a + (b.vendas || 0), 0);
-            const totalContratos = data.reduce((a, b) => a + (b.contratos || 0), 0);
-            const ticketMedio = totalVendas / totalContratos;
-            const ultimoCrescimento = data[0]?.crescimento || 0;
-            
-            document.getElementById('kpi-vendas').textContent = 'R$ ' + (totalVendas/1e6).toFixed(1) + 'M';
-            document.getElementById('kpi-contratos').textContent = totalContratos.toLocaleString();
-            document.getElementById('kpi-ticket').textContent = 'R$ ' + ticketMedio.toLocaleString('pt-BR');
+            const totalVendas    = data.reduce((a, b) => a + (+b.vendas    || 0), 0);
+            const totalContratos = data.reduce((a, b) => a + (+b.contratos || 0), 0);
+            const ticketMedio    = totalContratos ? totalVendas / totalContratos : 0;
+            // Crescimento mais recente (data[0] = mês mais recente na ordem DESC)
+            const crescArr = data.filter(d => d.crescimento != null);
+            const ultimoCrescimento = crescArr.length ? +crescArr[0].crescimento : 0;
+
+            document.getElementById('kpi-vendas').textContent      = 'R$ ' + (totalVendas/1e6).toFixed(1) + 'M';
+            document.getElementById('kpi-contratos').textContent   = totalContratos.toLocaleString('pt-BR');
+            document.getElementById('kpi-ticket').textContent      = 'R$ ' + Math.round(ticketMedio).toLocaleString('pt-BR');
             document.getElementById('kpi-crescimento').textContent = (ultimoCrescimento > 0 ? '+' : '') + ultimoCrescimento.toFixed(1) + '%';
-            document.getElementById('kpi-crescimento').className = 'text-2xl font-bold ' + (ultimoCrescimento >= 0 ? 'text-secondary' : 'text-error');
+            document.getElementById('kpi-crescimento').className   = 'text-2xl font-bold ' + (ultimoCrescimento >= 0 ? 'text-secondary' : 'text-error');
         }
 
         function renderEvolucao(data) {
-            const meses = data.map(d => d.mes_ano).reverse();
-            const vendas = data.map(d => d.vendas/1e6).reverse();
-            const contratos = data.map(d => d.contratos).reverse();
-            
+            // API retorna DESC — reverter para ordem cronológica
+            const ord = [...data].reverse();
+            const meses   = ord.map(d => d.mes_label || d.mes_ano);
+            const vendas  = ord.map(d => +((+d.vendas) / 1e6).toFixed(2));
+            const cresc   = ord.map(d => d.crescimento != null ? +(+d.crescimento).toFixed(1) : null);
+
             Plotly.newPlot('chart-evolucao', [
-                {
-                    x: meses, y: vendas, type: 'bar', name: 'Vendas (R$ M)',
-                    marker: { color: '#112800' }
-                },
-                {
-                    x: meses, y: contratos, type: 'scatter', name: 'Contratos',
-                    yaxis: 'y2', mode: 'lines+markers',
-                    line: { color: '#F58220', width: 2 }, marker: { size: 6 }
-                }
+                { x: meses, y: vendas, type: 'bar', name: 'Vendas (R$ M)',
+                  marker: { color: '#112800' },
+                  hovertemplate: '<b>%{x}</b><br>R$ %{y:.2f}M<extra></extra>' },
+                { x: meses, y: cresc, type: 'scatter', name: 'Crescimento %',
+                  yaxis: 'y2', mode: 'lines+markers',
+                  line: { color: '#F58220', width: 2 }, marker: { size: 6 },
+                  hovertemplate: '<b>%{x}</b><br>%{y:.1f}%<extra></extra>' }
             ], {
-                yaxis: { title: 'Vendas (R$ M)', tickprefix: 'R$ ' },
-                yaxis2: { title: 'Contratos', overlaying: 'y', side: 'right' },
-                xaxis: { title: '' },
+                yaxis:  { title: 'Vendas (R$ M)', tickprefix: 'R$ ',
+                          gridcolor: 'rgba(116,121,108,0.1)' },
+                yaxis2: { title: 'Crescimento %', overlaying: 'y', side: 'right',
+                          ticksuffix: '%', zeroline: false },
+                xaxis:  { gridcolor: 'rgba(116,121,108,0.1)' },
                 margin: { t: 20, b: 40, l: 60, r: 60 },
-                legend: { orientation: 'h', y: 1.15 },
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
-            }, {responsive: true});
+                legend: { orientation: 'h', y: 1.12 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { family: 'Inter, sans-serif', size: 11 }
+            }, {responsive: true, displayModeBar: false});
         }
 
         function renderCrescimento(data) {
-            const meses = data.map(d => d.mes_ano).reverse();
-            const crescimento = data.map(d => d.crescimento || 0).reverse();
-            
-            const colors = crescimento.map(v => v >= 0 ? '#436900' : '#ba1a1a');
-            
+            const ord = [...data].reverse();
+            const meses     = ord.map(d => d.mes_label || d.mes_ano);
+            const crescimento = ord.map(d => d.crescimento != null ? +(+d.crescimento).toFixed(1) : 0);
             Plotly.newPlot('chart-crescimento', [{
                 x: meses, y: crescimento, type: 'bar',
-                marker: { color: colors },
+                marker: { color: crescimento.map(v => v >= 0 ? '#436900' : '#ba1a1a') },
                 text: crescimento.map(v => v.toFixed(1) + '%'),
-                textposition: 'outside'
+                textposition: 'outside',
+                hovertemplate: '<b>%{x}</b><br>%{y:.1f}%<extra></extra>'
             }], {
-                yaxis: { title: 'Crescimento (%)', ticksuffix: '%' },
-                margin: { t: 20, b: 40, l: 50, r: 20 },
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
-            }, {responsive: true});
+                yaxis: { title: 'Crescimento (%)', ticksuffix: '%',
+                         gridcolor: 'rgba(116,121,108,0.1)' },
+                margin: { t: 30, b: 40, l: 50, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { family: 'Inter, sans-serif', size: 11 }
+            }, {responsive: true, displayModeBar: false});
         }
 
         function renderAcumulado(data) {
-            const meses = data.map(d => d.mes_ano).reverse();
-            let acumulado = 0;
-            const valores = data.map(d => {
-                acumulado += d.vendas || 0;
-                return acumulado / 1e6;
-            }).reverse();
-            
+            const ord = [...data].reverse();
+            const meses = ord.map(d => d.mes_label || d.mes_ano);
+            let acc = 0;
+            const valores = ord.map(d => { acc += +d.vendas || 0; return +(acc/1e6).toFixed(2); });
             Plotly.newPlot('chart-acumulado', [{
                 x: meses, y: valores, type: 'scatter', mode: 'lines+markers',
                 fill: 'tozeroy', line: { color: '#436900', width: 2 },
                 marker: { size: 6, color: '#436900' },
-                fillcolor: 'rgba(67, 105, 0, 0.1)'
+                fillcolor: 'rgba(67,105,0,0.1)',
+                hovertemplate: '<b>%{x}</b><br>R$ %{y:.2f}M<extra></extra>'
             }], {
-                yaxis: { title: 'Acumulado (R$ M)', tickprefix: 'R$ ' },
+                yaxis: { title: 'Acumulado (R$ M)', tickprefix: 'R$ ',
+                         gridcolor: 'rgba(116,121,108,0.1)' },
                 margin: { t: 20, b: 40, l: 60, r: 20 },
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
-            }, {responsive: true});
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { family: 'Inter, sans-serif', size: 11 }
+            }, {responsive: true, displayModeBar: false});
         }
 
         function renderComparativo() {
-            // Mock data para comparativo 2023 vs 2024
-            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            const dados2023 = [1.8, 2.0, 2.5, 2.8, 3.0, 3.2, 3.5, 3.8, 4.0, 4.2, 4.5, 4.8];
-            const dados2024 = [2.1, 2.3, 2.8, 3.2, 3.5, 3.8, 4.1, 4.5, 4.8, 5.1, 5.3, 5.2];
-            
-            Plotly.newPlot('chart-comparativo', [
-                { x: meses, y: dados2023, type: 'bar', name: '2023', marker: { color: '#74796c' } },
-                { x: meses, y: dados2024, type: 'bar', name: '2024', marker: { color: '#112800' } }
-            ], {
-                barmode: 'group',
-                yaxis: { title: 'Vendas (R$ M)', tickprefix: 'R$ ' },
-                margin: { t: 20, b: 40, l: 60, r: 20 },
-                legend: { orientation: 'h', y: 1.15 },
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
-            }, {responsive: true});
+            // Busca dados reais do banco
+            fetch('/api/tendencias/comparativo')
+                .then(r => r.json())
+                .then(comp => {
+                    const meses = comp.meses || [];
+                    const anos  = comp.anos  || [];
+                    if (!anos.length || !meses.length) return;
+
+                    const cores = ['#74796c', '#112800', '#436900'];
+                    const traces = [];
+
+                    // Primeiro ano → barras; demais → linhas (igual ao gráfico de Evolução)
+                    anos.forEach((ano, idx) => {
+                        const key  = String(ano);
+                        const vals = (comp.series[key] || []).map(v => +((v||0)/1e6).toFixed(2));
+                        if (idx === 0) {
+                            traces.push({ x: meses, y: vals, type: 'bar', name: String(ano),
+                                          marker: { color: cores[0] },
+                                          hovertemplate: `<b>${ano} — %{x}</b><br>R$ %{y:.2f}M<extra></extra>` });
+                        } else {
+                            traces.push({ x: meses, y: vals, type: 'scatter', name: String(ano),
+                                          mode: 'lines+markers',
+                                          line: { color: cores[idx] || '#436900', width: 2 },
+                                          marker: { size: 7 },
+                                          hovertemplate: `<b>${ano} — %{x}</b><br>R$ %{y:.2f}M<extra></extra>` });
+                        }
+                    });
+
+                    Plotly.newPlot('chart-comparativo', traces, {
+                        yaxis: { title: 'Vendas (R$ M)', tickprefix: 'R$ ',
+                                 gridcolor: 'rgba(116,121,108,0.1)' },
+                        margin: { t: 20, b: 40, l: 60, r: 20 },
+                        legend: { orientation: 'h', y: 1.12 },
+                        barmode: 'group',
+                        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                        font: { family: 'Inter, sans-serif', size: 11 }
+                    }, {responsive: true, displayModeBar: false});
+
+                    // BUG 4 FIX: compute real KPI values from comp.series (no more mock values)
+                    if (anos.length >= 2) {
+                        const keyFirst    = String(anos[0]);
+                        const keyLast     = String(anos[anos.length - 1]);
+                        const seriesFirst = (comp.series[keyFirst] || []).map(v => +v || 0);
+                        const seriesLast  = (comp.series[keyLast]  || []).map(v => +v || 0);
+
+                        // YoY growth: total of last year vs total of first year
+                        const sumFirst = seriesFirst.reduce((a, b) => a + b, 0);
+                        const sumLast  = seriesLast.reduce((a, b) => a + b, 0);
+                        const yoyNum   = sumFirst > 0 ? ((sumLast - sumFirst) / sumFirst * 100) : 0;
+                        document.getElementById('comp-yoy').textContent =
+                            sumFirst > 0 ? (yoyNum >= 0 ? '+' : '') + yoyNum.toFixed(1) + '%' : '-';
+
+                        // Best month: highest-value month in the last-year series
+                        const maxVal = Math.max.apply(null, seriesLast);
+                        const maxIdx = seriesLast.indexOf(maxVal);
+                        document.getElementById('comp-melhor').textContent = meses[maxIdx] || '-';
+
+                        // Annual projection: last-year total scaled to 12 months
+                        const monthsWithData = seriesLast.filter(v => v > 0).length || 1;
+                        const proj = sumLast * (12 / monthsWithData);
+                        document.getElementById('comp-proj').textContent = 'R$ ' + (proj / 1e6).toFixed(1) + 'M';
+
+                    } else if (anos.length === 1) {
+                        const key    = String(anos[0]);
+                        const series = (comp.series[key] || []).map(v => +v || 0);
+
+                        const maxVal = Math.max.apply(null, series);
+                        const maxIdx = series.indexOf(maxVal);
+                        document.getElementById('comp-melhor').textContent = meses[maxIdx] || '-';
+                        document.getElementById('comp-yoy').textContent = '-';
+
+                        const monthsWithData = series.filter(v => v > 0).length || 1;
+                        const proj = series.reduce((a, b) => a + b, 0) * (12 / monthsWithData);
+                        document.getElementById('comp-proj').textContent = 'R$ ' + (proj / 1e6).toFixed(1) + 'M';
+                    }
+                })
+                .catch(e => console.error('Erro comparativo:', e));
         }
 
         function renderSafras() {
@@ -418,12 +463,12 @@
         function renderTabela() {
             const tbody = document.getElementById('tbody-dados');
             let acumulado = 0;
-            
+
             tbody.innerHTML = tendenciasData.map((d, i) => {
                 acumulado += d.vendas || 0;
                 const tendencia = d.crescimento > 5 ? '↗️' : d.crescimento < -5 ? '↘️' : '➡️';
                 const cor = d.crescimento > 0 ? 'text-secondary' : d.crescimento < 0 ? 'text-error' : 'text-outline';
-                
+
                 return `
                     <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low">
                         <td class="px-4 py-3 font-medium">${d.mes_ano}</td>

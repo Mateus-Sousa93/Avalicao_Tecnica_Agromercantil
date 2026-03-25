@@ -1,0 +1,45 @@
+{# _nav.html - Navegação compartilhada
+   Uso: {% set active_page = 'dashboard' %}{% include '_nav.html' %}
+   active_page: dashboard | rfv | explorer | produtos | tendencias | compra | inativos | anomalias | analise | dados
+#}
+<header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
+    <div class="flex items-center space-x-8 h-full">
+        <div class="flex items-center gap-2">
+            <img alt="Agromercantil" class="h-8 w-auto" src="{{ url_for('static', filename='images/logo.png') }}"/>
+        </div>
+        <nav class="flex items-center h-full space-x-1">
+            <a class="font-headline text-sm tracking-tight px-3 py-1 {% if active_page == 'dashboard' %}text-primary border-b-2 border-primary/30 pb-1 font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="font-headline text-sm tracking-tight px-3 py-1 {% if active_page == 'rfv' %}text-primary border-b-2 border-primary/30 pb-1 font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}" href="{{ url_for('rfv_page') }}">RFV</a>
+            <a class="font-headline text-sm tracking-tight px-3 py-1 {% if active_page == 'explorer' %}text-primary border-b-2 border-primary/30 pb-1 font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}" href="{{ url_for('explorer_page') }}">Explorer</a>
+            <a class="font-headline text-sm tracking-tight px-3 py-1 {% if active_page == 'produtos' %}text-primary border-b-2 border-primary/30 pb-1 font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}" href="{{ url_for('produtos_page') }}">Produtos</a>
+            <a class="font-headline text-sm tracking-tight px-3 py-1 {% if active_page == 'tendencias' %}text-primary border-b-2 border-primary/30 pb-1 font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}" href="{{ url_for('tendencias_page') }}">Tendências</a>
+            <a class="font-headline text-sm tracking-tight px-3 py-1 {% if active_page == 'compra' %}text-primary border-b-2 border-primary/30 pb-1 font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}" href="{{ url_for('compra_compartilhada_page') }}">Compra Compartilhada</a>
+            <div class="relative group h-full flex items-center">
+                <button class="font-headline text-sm tracking-tight px-3 py-1 flex items-center gap-1 {% if active_page in ['inativos','anomalias','analise'] %}text-primary font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}">
+                    Análises <span class="material-symbols-outlined text-sm">expand_more</span>
+                </button>
+                <div class="absolute top-full left-0 mt-0 pt-1 w-52 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible hover:opacity-100 hover:visible transition-all z-50">
+                    <a class="block px-4 py-2 text-sm hover:bg-surface-container-low {% if active_page == 'inativos' %}text-primary font-semibold{% else %}text-on-surface{% endif %}" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
+                    <a class="block px-4 py-2 text-sm hover:bg-surface-container-low {% if active_page == 'anomalias' %}text-primary font-semibold{% else %}text-on-surface{% endif %}" href="{{ url_for('anomalias_page') }}">Anomalias</a>
+                    <a class="block px-4 py-2 text-sm hover:bg-surface-container-low {% if active_page == 'analise' %}text-primary font-semibold{% else %}text-on-surface{% endif %}" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
+                </div>
+            </div>
+            <a class="font-headline text-sm tracking-tight px-3 py-1 {% if active_page == 'dados' %}text-primary border-b-2 border-primary/30 pb-1 font-semibold{% else %}text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm{% endif %}" href="{{ url_for('dados_page') }}">Dados</a>
+        </nav>
+    </div>
+    <div class="flex items-center gap-4">
+        {% if metrics is defined and metrics.last_update is defined %}
+        <div class="flex items-center gap-2 text-xs text-on-surface-variant">
+            <span class="w-2 h-2 rounded-full bg-secondary live-indicator"></span>
+            <span>Atualizado {{ metrics.last_update }}</span>
+        </div>
+        {% endif %}
+        <div class="flex items-center gap-2 text-sm text-on-surface-variant">
+            <span class="material-symbols-outlined text-base">person</span>
+            <span class="font-medium">{{ username }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-sm hover:bg-surface-container-low" title="Sair">
+            <span class="material-symbols-outlined">logout</span>
+        </a>
+    </div>
+</header>

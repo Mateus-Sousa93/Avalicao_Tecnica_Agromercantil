@@ -66,35 +66,7 @@
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-tertiary/20">
-        <div class="flex items-center space-x-8 h-full">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">eco</span>
-                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
-            </div>
-            <nav class="flex items-center h-full space-x-1">
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
-                <div class="relative group">
-                    <button class="font-headline text-sm tracking-tight text-tertiary border-b-2 border-tertiary/30 pb-1 font-semibold px-3 py-1 flex items-center gap-1">
-                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
-                    </button>
-                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                        <a class="block px-4 py-2 text-sm text-tertiary bg-tertiary/5 font-medium" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <div class="flex items-center gap-4">
-            <span class="text-sm text-on-surface-variant">{{ username }}</span>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
-        </div>
-    </header>
+    {% set active_page = 'inativos' %}{% include '_nav.html' %}
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden">

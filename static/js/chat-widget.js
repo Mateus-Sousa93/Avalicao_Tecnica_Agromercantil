@@ -16,9 +16,8 @@
             <style>
                 #chat-widget-container {
                     position: fixed;
-                    right: 0;
-                    top: 50%;
-                    transform: translateY(-50%);
+                    right: 24px;
+                    bottom: 24px;
                     z-index: 9999;
                     display: flex;
                     align-items: center;
@@ -38,7 +37,6 @@
                     border: 3px solid #F58220;
                     padding: 0;
                     overflow: hidden;
-                    margin-right: 16px;
                 }
                 
                 #chat-widget-button:hover {
@@ -272,30 +270,14 @@
             
             <div id="chat-widget-container">
                 <button id="chat-widget-button" title="Falar com AgroBot">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;">
-                        <circle cx="12" cy="8" r="4" fill="#F58220"/>
-                        <rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/>
-                        <circle cx="9" cy="14" r="1.5" fill="#112800"/>
-                        <circle cx="15" cy="14" r="1.5" fill="#112800"/>
-                        <rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/>
-                        <rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/>
-                        <rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/>
-                    </svg>
+                    <img src="/static/images/agent.png" alt="AgroBot" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                 </button>
             </div>
             
             <div id="chat-widget-panel">
                 <div id="chat-widget-header">
                     <h3>
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;">
-                            <circle cx="12" cy="8" r="4" fill="#F58220"/>
-                            <rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/>
-                            <circle cx="9" cy="14" r="1.5" fill="#112800"/>
-                            <circle cx="15" cy="14" r="1.5" fill="#112800"/>
-                            <rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/>
-                            <rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/>
-                            <rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/>
-                        </svg>
+                        <img src="/static/images/agent.png" alt="AgroBot" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.3);">
                         <div>
                             <div style="font-size: 16px; font-weight: 600;">AgroBot</div>
                             <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Analista de Commodities</div>
@@ -321,10 +303,10 @@
                         </button>
                     </form>
                     <div class="chat-suggestions">
-                        <span class="chat-suggestion" data-msg="Qual o faturamento total?">Faturamento</span>
-                        <span class="chat-suggestion" data-msg="Quantos clientes ativos?">Clientes</span>
-                        <span class="chat-suggestion" data-msg="Top produtos vendidos">Produtos</span>
-                        <span class="chat-suggestion" data-msg="Ajuda">Ajuda</span>
+                        <span class="chat-suggestion" data-msg="Quais produtos têm maior margem?">Top Margens</span>
+                        <span class="chat-suggestion" data-msg="Quantos clientes estão em risco?">Clientes em Risco</span>
+                        <span class="chat-suggestion" data-msg="Qual a tendência de vendas nos últimos meses?">Tendência</span>
+                        <span class="chat-suggestion" data-msg="Tem alguma anomalia pendente?">Anomalias</span>
                     </div>
                 </div>
             </div>
@@ -447,7 +429,7 @@
             welcomeEl.className = 'chat-message bot';
             welcomeEl.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="12" cy="8" r="4" fill="#F58220"/><rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/><circle cx="9" cy="14" r="1.5" fill="#112800"/><circle cx="15" cy="14" r="1.5" fill="#112800"/><rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/><rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/><rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/></svg>
+                    <img src="/static/images/agent.png" alt="AgroBot" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
                     <strong>AgroBot</strong>
                 </div>
                 Olá! 👋 Tudo bem? Sou seu assistente aqui na Agromercantil.<br><br>
@@ -461,10 +443,10 @@
             suggestionsEl.className = 'chat-suggestions';
             suggestionsEl.style.marginTop = '12px';
             suggestionsEl.innerHTML = `
-                <span class="chat-suggestion" data-msg="Qual nosso faturamento?">💰 Faturamento</span>
-                <span class="chat-suggestion" data-msg="Quantos clientes temos?">👥 Clientes</span>
-                <span class="chat-suggestion" data-msg="Top produtos vendidos">🌾 Produtos</span>
-                <span class="chat-suggestion" data-msg="Tem alguma dica?">💡 Dica do dia</span>
+                <span class="chat-suggestion" data-msg="Quais produtos têm maior margem?">🌾 Top Margens</span>
+                <span class="chat-suggestion" data-msg="Quantos clientes estão em risco de churn?">⚠️ Clientes em Risco</span>
+                <span class="chat-suggestion" data-msg="Qual a tendência de vendas nos últimos meses?">📈 Tendência</span>
+                <span class="chat-suggestion" data-msg="Há anomalias pendentes de correção?">🔍 Anomalias</span>
             `;
             messagesDiv.appendChild(suggestionsEl);
             
@@ -485,7 +467,7 @@
                 if (msg.sender === 'bot' && index > 0) {
                     msgEl.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; opacity: 0.7;">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;"><circle cx="12" cy="8" r="4" fill="#F58220"/><rect x="6" y="10" width="12" height="10" rx="2" fill="#F58220"/><circle cx="9" cy="14" r="1.5" fill="#112800"/><circle cx="15" cy="14" r="1.5" fill="#112800"/><rect x="10" y="17" width="4" height="2" rx="1" fill="#112800"/><rect x="4" y="12" width="2" height="4" rx="1" fill="#F58220"/><rect x="18" y="12" width="2" height="4" rx="1" fill="#F58220"/></svg>
+                            <img src="/static/images/agent.png" alt="AgroBot" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
                             <span style="font-size: 11px;">AgroBot</span>
                         </div>
                         ${formatMessage(msg.text)}

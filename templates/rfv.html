@@ -74,35 +74,7 @@
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
-        <div class="flex items-center space-x-8 h-full">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">eco</span>
-                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
-            </div>
-            <nav class="flex items-center h-full space-x-1">
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
-                <div class="relative group">
-                    <button class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1 flex items-center gap-1">
-                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
-                    </button>
-                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('anomalias_page') }}">Anomalias</a>
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <div class="flex items-center gap-4">
-            <span class="text-sm text-on-surface-variant">{{ username }}</span>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
-        </div>
-    </header>
+    {% set active_page = 'rfv' %}{% include '_nav.html' %}
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden">
@@ -117,7 +89,7 @@
                 <div class="flex gap-2">
                     <select id="filtro-segmento" onchange="filtrarTabela()" class="px-3 py-2 border border-outline-variant rounded-lg text-sm bg-white">
                         <option value="">Todos os Segmentos</option>
-                        <option value="Campeao">Campeão</option>
+                        <option value="Campeão">Campeão</option>
                         <option value="Fiel">Fiel</option>
                         <option value="Ativo">Ativo</option>
                         <option value="Em Risco">Em Risco</option>
@@ -317,14 +289,14 @@
                     { data: 'regiao' },
                     { data: 'segmento', render: function(data) {
                         const classes = {
-                            'Campeao': 'badge-campeao',
-                            'Fiel': 'badge-fiel',
-                            'Ativo': 'badge-ativo',
-                            'Em Risco': 'badge-risco'
+                            'Campeão': 'badge-campeao',
+                            'Fiel':    'badge-fiel',
+                            'Ativo':   'badge-ativo',
+                            'Em Risco':'badge-risco'
                         };
                         return `<span class="px-2 py-1 rounded text-xs ${classes[data] || 'bg-gray-200'}">${data}</span>`;
                     }},
-                    { data: 'dias_desde_ultimo' },
+                    { data: 'dias_desde_ultimo', render: d => `${d} dias` },
                     { data: 'ultima_data' },
                     { data: 'total_pedidos' },
                     { data: 'ticket_medio', render: $.fn.dataTable.render.number('.', ',', 2, 'R$ ') },
@@ -339,12 +311,12 @@
         function atualizarKPIs(data) {
             document.getElementById('kpi-total').textContent = data.length;
             
-            const segmentos = { 'Campeao': 0, 'Fiel': 0, 'Ativo': 0, 'Em Risco': 0 };
+            const segmentos = { 'Campeão': 0, 'Fiel': 0, 'Ativo': 0, 'Em Risco': 0 };
             data.forEach(d => {
                 if (segmentos.hasOwnProperty(d.segmento)) segmentos[d.segmento]++;
             });
-            
-            document.getElementById('kpi-campeao').textContent = segmentos['Campeao'];
+
+            document.getElementById('kpi-campeao').textContent = segmentos['Campeão'];
             document.getElementById('kpi-fiel').textContent = segmentos['Fiel'];
             document.getElementById('kpi-ativo').textContent = segmentos['Ativo'];
             document.getElementById('kpi-risco').textContent = segmentos['Em Risco'];
@@ -423,7 +395,7 @@
                 if (!regioes[d.regiao]) regioes[d.regiao] = { count: 0, valor: 0, campeoes: 0 };
                 regioes[d.regiao].count++;
                 regioes[d.regiao].valor += d.valor_total;
-                if (d.segmento === 'Campeao') regioes[d.regiao].campeoes++;
+                if (d.segmento === 'Campeão') regioes[d.regiao].campeoes++;
             });
 
             const labels = Object.keys(regioes);

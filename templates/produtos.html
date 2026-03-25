@@ -55,29 +55,7 @@
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
-        <div class="flex items-center space-x-8 h-full">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">eco</span>
-                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
-            </div>
-            <nav class="flex items-center h-full space-x-1">
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
-                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
-            </nav>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-lg">person</span>
-                <span class="font-medium">{{ username }}</span>
-            </div>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-sm hover:bg-error/5" title="Sair">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
-        </div>
-    </header>
+    {% set active_page = 'produtos' %}{% include '_nav.html' %}
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
@@ -85,29 +63,27 @@
         <!-- KPI Cards -->
         <section class="grid grid-cols-4 gap-4 flex-none">
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #112800;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Receita Total</p>
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Receita Total (12m)</p>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">R$ 12.5M</span>
-                    <span class="text-[11px] font-medium text-secondary">+8.3%</span>
+                    <span id="kpi-receita" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
                 </div>
             </div>
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #436900;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Ticket Médio</p>
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Margem Média</p>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">R$ 18.4k</span>
+                    <span id="kpi-margem" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
                 </div>
             </div>
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #F58220;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Volume (ton)</p>
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Volume Total</p>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">45.2k</span>
-                    <span class="text-[11px] font-medium text-secondary">+12%</span>
+                    <span id="kpi-volume" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
                 </div>
             </div>
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #c4c8ba;">
-                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Produtos Ativos</p>
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Contratos</p>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">18</span>
+                    <span id="kpi-contratos" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
                 </div>
             </div>
         </section>
@@ -123,43 +99,11 @@
             <!-- Right: Details -->
             <div class="bg-surface-container-lowest elevation-1 flex flex-col p-5 overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold font-headline text-on-surface">Detalhes por Categoria</h2>
-                    <span class="text-xs text-on-surface-variant">Volume de vendas</span>
+                    <h2 class="text-lg font-bold font-headline text-on-surface">Ranking de Produtos</h2>
+                    <span class="text-xs text-on-surface-variant">Receita últimos 12 meses</span>
                 </div>
-                <div class="flex-1 space-y-4 overflow-auto">
-                    {% for produto in produtos %}
-                    <div class="group">
-                        <div class="flex justify-between text-xs mb-1.5">
-                            <span class="font-medium text-on-surface">{{ produto.nome }}</span>
-                            <span class="font-semibold text-on-surface">R$ {{ "{:,.2f}".format(produto.total_vendas/1e6).replace(".", "_").replace(",", ".").replace("_", ",") }}M <span class="text-[10px] text-on-surface-variant font-normal">/ano</span></span>
-                        </div>
-                        <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
-                            <div class="h-full harvest-meter transition-all duration-500" style="width: {{ produto.percentual }}%;"></div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    
-                    <!-- Categoria summary -->
-                    <div class="mt-6 pt-4 border-t border-outline-variant/20">
-                        <h3 class="text-xs font-semibold text-on-surface-variant mb-3 uppercase tracking-wider">Por Categoria</h3>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="bg-surface-container-low p-3 rounded-lg text-center">
-                                <span class="material-symbols-outlined text-secondary text-lg">grass</span>
-                                <p class="text-lg font-bold text-on-surface mt-1">Grãos</p>
-                                <p class="text-[10px] text-on-surface-variant">68% do total</p>
-                            </div>
-                            <div class="bg-surface-container-low p-3 rounded-lg text-center">
-                                <span class="material-symbols-outlined text-tertiary text-lg">coffee</span>
-                                <p class="text-lg font-bold text-on-surface mt-1">Café</p>
-                                <p class="text-[10px] text-on-surface-variant">17% do total</p>
-                            </div>
-                            <div class="bg-surface-container-low p-3 rounded-lg text-center">
-                                <span class="material-symbols-outlined text-primary text-lg">spa</span>
-                                <p class="text-lg font-bold text-on-surface mt-1">Fibras</p>
-                                <p class="text-[10px] text-on-surface-variant">15% do total</p>
-                            </div>
-                        </div>
-                    </div>
+                <div id="lista-produtos" class="flex-1 space-y-4 overflow-auto">
+                    <p class="text-sm text-on-surface-variant">Carregando...</p>
                 </div>
             </div>
         </section>
@@ -175,33 +119,68 @@
     </footer>
 
     <script>
-        // Gráfico de Barras Horizontal
-        var produtosData = [{
-            y: ['Algodão em Pluma', 'Trigo Soft Red', 'Café Arábica SC-17', 'Milho Amarelo Tipo 2', 'Soja Premium (GMO)'],
-            x: [1.24, 1.68, 2.15, 3.18, 4.25],
-            type: 'bar',
-            orientation: 'h',
-            marker: { color: '#112800' },
-            text: ['R$ 1.2M', 'R$ 1.7M', 'R$ 2.2M', 'R$ 3.2M', 'R$ 4.3M'],
-            textposition: 'outside'
-        }];
+        const fmtM = v => v >= 1e6 ? `R$ ${(v/1e6).toFixed(1)}M` : `R$ ${(v/1e3).toFixed(0)}k`;
+        const fmtN = v => Number(v).toLocaleString('pt-BR');
 
-        var layout = {
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            margin: { l: 140, r: 60, t: 10, b: 30 },
-            xaxis: { 
-                title: 'Receita (R$ M)',
-                gridcolor: 'rgba(116, 121, 108, 0.1)'
-            },
-            yaxis: { 
-                automargin: true,
-                tickfont: { size: 11 }
-            },
-            font: { family: 'Inter, sans-serif', size: 11 }
-        };
+        fetch('/api/produtos')
+            .then(r => r.json())
+            .then(data => {
+                if (!data || !data.length) return;
 
-        Plotly.newPlot('chart-produtos', produtosData, layout, {responsive: true, displayModeBar: false});
+                // KPIs — forçar conversão numérica explícita
+                const receitaTotal = data.reduce((s, p) => s + (+p.total_vendas  || 0), 0);
+                const margemMedia  = data.reduce((s, p) => s + (+p.margem_pct    || 0), 0) / data.length;
+                const volTotal     = data.reduce((s, p) => s + (+p.volume_total  || 0), 0);
+                const contratos    = data.reduce((s, p) => s + (+p.total_contratos || 0), 0);
+                document.getElementById('kpi-receita').textContent   = fmtM(receitaTotal);
+                document.getElementById('kpi-margem').textContent    = margemMedia.toFixed(1) + '%';
+                document.getElementById('kpi-volume').textContent    = fmtN(Math.round(volTotal));
+                document.getElementById('kpi-contratos').textContent = fmtN(contratos);
+
+                // Gráfico barras horizontal (top 5)
+                const top5 = data.slice(0, 5);
+                const top5r = [...top5].reverse(); // ordem visual de baixo pra cima
+
+                Plotly.newPlot('chart-produtos', [{
+                    y: top5r.map(p => p.nome),
+                    x: top5r.map(p => +((+p.total_vendas) / 1e6).toFixed(2)),
+                    type: 'bar',
+                    orientation: 'h',
+                    marker: {
+                        color: top5r.map((_, i) => ['#5a8700','#436900','#2e5a00','#1e3d00','#112800'][i])
+                    },
+                    text: top5r.map(p => fmtM(+p.total_vendas)),
+                    textposition: 'outside',
+                    customdata: top5r.map(p => (+p.margem_pct || 0).toFixed(1)),
+                    hovertemplate: '<b>%{y}</b><br>Receita: R$ %{x:.2f}M<br>Margem: %{customdata}%<extra></extra>'
+                }], {
+                    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                    margin: { l: 160, r: 80, t: 10, b: 30 },
+                    xaxis: { title: 'Receita (R$ M)', gridcolor: 'rgba(116,121,108,0.1)' },
+                    yaxis: { automargin: true, tickfont: { size: 11 } },
+                    font: { family: 'Inter, sans-serif', size: 11 }
+                }, {responsive: true, displayModeBar: false});
+
+                // Lista lateral
+                const lista = document.getElementById('lista-produtos');
+                lista.innerHTML = data.slice(0, 8).map((p, i) => `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-medium text-on-surface">${i+1}. ${p.nome}</span>
+                            <span class="font-semibold text-on-surface">${fmtM(+p.total_vendas)}
+                                <span class="text-[10px] text-secondary font-normal"> ${(+p.margem_pct||0).toFixed(1)}% mg</span>
+                            </span>
+                        </div>
+                        <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+                            <div class="h-full harvest-meter transition-all duration-700" style="width:${+p.percentual||0}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-on-surface-variant mt-0.5">
+                            <span>${p.subcategoria || p.categoria || '—'}</span>
+                            <span>${fmtN(+p.total_contratos || 0)} contratos</span>
+                        </div>
+                    </div>`).join('');
+            })
+            .catch(e => console.error('Erro ao carregar produtos:', e));
     </script>
 
 <!-- Chat Widget -->

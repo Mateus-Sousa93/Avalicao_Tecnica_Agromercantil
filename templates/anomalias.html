@@ -71,36 +71,7 @@
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-error/20">
-        <div class="flex items-center space-x-8 h-full">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">eco</span>
-                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
-            </div>
-            <nav class="flex items-center h-full space-x-1">
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('explorer_page') }}">Explorer</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('compra_compartilhada_page') }}">Compra Compartilhada</a>
-                <div class="relative group">
-                    <button class="font-headline text-sm tracking-tight text-error border-b-2 border-error/30 pb-1 font-semibold px-3 py-1 flex items-center gap-1">
-                        Análises <span class="material-symbols-outlined text-sm">expand_more</span>
-                    </button>
-                    <div class="absolute top-full left-0 mt-1 w-48 bg-surface-container-lowest rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('inativos_page') }}">Clientes Inativos</a>
-                        <a class="block px-4 py-2 text-sm text-error bg-error/5 font-medium" href="{{ url_for('anomalias_page') }}">Anomalias</a>
-                        <a class="block px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low" href="{{ url_for('analise_page') }}">Análise Exploratória</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <div class="flex items-center gap-4">
-            <span class="text-sm text-on-surface-variant">{{ username }}</span>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">logout</span></a>
-        </div>
-    </header>
+    {% set active_page = 'anomalias' %}{% include '_nav.html' %}
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden">
@@ -175,6 +146,12 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-bold">Anomalias Detectadas</h3>
                         <div class="flex gap-2">
+                            <select id="filtro-periodo" onchange="carregarDados()" class="px-3 py-1 border border-outline-variant rounded text-sm">
+                                <option value="365">Últimos 12 meses</option>
+                                <option value="180">Últimos 6 meses</option>
+                                <option value="90">Últimos 3 meses</option>
+                                <option value="30">Último mês</option>
+                            </select>
                             <select id="filtro-status" onchange="filtrarAnomalias()" class="px-3 py-1 border border-outline-variant rounded text-sm">
                                 <option value="">Todos</option>
                                 <option value="PENDENTE">Pendentes</option>
@@ -324,17 +301,17 @@ WHERE ABS(p.valor_total - si.valor_calculado) > 0.01;
                 <div class="grid grid-cols-2 gap-6">
                     <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
                         <h3 class="font-bold mb-4">Por Tipo de Anomalia</h3>
-                        <div id="chart-tipo"></div>
+                        <div id="chart-tipo" style="height:280px"></div>
                     </div>
                     <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
                         <h3 class="font-bold mb-4">Evolução Temporal</h3>
-                        <div id="chart-tempo"></div>
+                        <div id="chart-tempo" style="height:280px"></div>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-6 mt-6">
                     <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
                         <h3 class="font-bold mb-4">Por Cliente (Top 10)</h3>
-                        <div id="chart-clientes"></div>
+                        <div id="chart-clientes" style="height:280px"></div>
                     </div>
                     <div class="bg-surface-container-lowest elevation-1 p-5 rounded-xl">
                         <h3 class="font-bold mb-4">Impacto Financeiro</h3>
@@ -491,11 +468,13 @@ WHERE ABS(p.valor_total - si.valor_calculado) > 0.01;</pre>
         });
 
         function carregarDados() {
-            fetch('/api/anomalias')
+            const periodo = document.getElementById('filtro-periodo')?.value || '365';
+            fetch(`/api/anomalias?periodo=${periodo}`)
                 .then(r => r.json())
                 .then(data => {
                     anomaliasData = data;
                     atualizarKPIs(data);
+                    if (table) { table.destroy(); table = null; }
                     inicializarTabela(data);
                 });
         }
@@ -637,24 +616,66 @@ WHERE ABS(p.valor_total - si.valor_calculado) > 0.01;</pre>
         }
 
         function renderAnalise() {
+            const LAYOUT_BASE = {
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { family: 'Inter, sans-serif', size: 11 }
+            };
+
+            // Gráfico de pizza — por tipo
             const tipos = {};
             anomaliasData.forEach(d => {
                 const tipo = d.tipo_anomalia || 'OUTRO';
                 if (!tipos[tipo]) tipos[tipo] = 0;
                 tipos[tipo] += Math.abs(d.diferenca || 0);
             });
-            
             Plotly.newPlot('chart-tipo', [{
                 values: Object.values(tipos), labels: Object.keys(tipos), type: 'pie', hole: 0.4,
                 marker: { colors: ['#ba1a1a', '#F58220', '#436900'] }
-            }], {margin: {t: 10, b: 10, l: 10, r: 10}}, {responsive: true});
+            }], { ...LAYOUT_BASE, margin: {t: 10, b: 10, l: 10, r: 10} }, {responsive: true, displayModeBar: false});
+
+            // Evolução temporal — por mês
+            const porMes = {};
+            anomaliasData.forEach(d => {
+                const mes = (d.data_pedido || '').substring(0, 7) || 'N/A';
+                if (!porMes[mes]) porMes[mes] = 0;
+                porMes[mes]++;
+            });
+            const meses = Object.keys(porMes).sort();
+            Plotly.newPlot('chart-tempo', [{
+                x: meses, y: meses.map(m => porMes[m]),
+                type: 'bar', marker: { color: '#ba1a1a' },
+                hovertemplate: '%{x}: <b>%{y} anomalias</b><extra></extra>'
+            }], { ...LAYOUT_BASE, margin: {l:40, r:20, t:10, b:50},
+                xaxis: { gridcolor: 'rgba(116,121,108,0.1)' },
+                yaxis: { gridcolor: 'rgba(116,121,108,0.1)', title: 'Qtd' }
+            }, {responsive: true, displayModeBar: false});
+
+            // Por cliente (top 10)
+            const porCliente = {};
+            anomaliasData.forEach(d => {
+                const cli = d.cliente || 'N/A';
+                if (!porCliente[cli]) porCliente[cli] = 0;
+                porCliente[cli] += Math.abs(d.diferenca || 0);
+            });
+            const clientesSorted = Object.entries(porCliente).sort((a,b) => b[1]-a[1]).slice(0,10).reverse();
+            Plotly.newPlot('chart-clientes', [{
+                y: clientesSorted.map(c => c[0]),
+                x: clientesSorted.map(c => c[1]),
+                type: 'bar', orientation: 'h',
+                marker: { color: '#F58220' },
+                hovertemplate: '<b>%{y}</b><br>Divergência: R$ %{x:,.2f}<extra></extra>'
+            }], { ...LAYOUT_BASE, margin: {l:160, r:40, t:10, b:40},
+                xaxis: { gridcolor: 'rgba(116,121,108,0.1)', tickformat: ',.0f' }
+            }, {responsive: true, displayModeBar: false});
 
             // Impacto financeiro
-            const sobre = anomaliasData.filter(d => d.tipo_anomalia === 'SOBREFATURAMENTO').reduce((a, b) => a + (b.diferenca || 0), 0);
-            const sub = anomaliasData.filter(d => d.tipo_anomalia === 'SUBFATURAMENTO').reduce((a, b) => a + Math.abs(b.diferenca || 0), 0);
-            
-            document.getElementById('impacto-sobre').textContent = 'R$ ' + sobre.toLocaleString('pt-BR');
-            document.getElementById('impacto-sub').textContent = 'R$ ' + sub.toLocaleString('pt-BR');
+            const sobre = anomaliasData.filter(d => d.tipo_anomalia === 'SOBREFATURAMENTO').reduce((a, b) => a + (+b.diferenca || 0), 0);
+            const sub = anomaliasData.filter(d => d.tipo_anomalia === 'SUBFATURAMENTO').reduce((a, b) => a + Math.abs(+b.diferenca || 0), 0);
+            const corrigido = anomaliasData.filter(d => d.status_correcao === 'CORRIGIDO').reduce((a, b) => a + Math.abs(+b.diferenca || 0), 0);
+
+            document.getElementById('impacto-sobre').textContent = 'R$ ' + sobre.toLocaleString('pt-BR', {minimumFractionDigits:2});
+            document.getElementById('impacto-sub').textContent = 'R$ ' + sub.toLocaleString('pt-BR', {minimumFractionDigits:2});
+            document.getElementById('impacto-corrigido').textContent = 'R$ ' + corrigido.toLocaleString('pt-BR', {minimumFractionDigits:2});
         }
 
         function carregarAuditoria() {

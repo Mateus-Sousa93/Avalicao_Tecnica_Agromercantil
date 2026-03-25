@@ -46,79 +46,67 @@
 <body class="bg-surface text-on-surface h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="glass-nav flex justify-between items-center w-full px-6 h-14 z-50 border-b border-outline-variant/10">
-        <div class="flex items-center space-x-8 h-full">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">eco</span>
-                <span class="font-headline font-bold text-sm tracking-tight text-primary">AGROMERCANTIL</span>
-            </div>
-            <nav class="flex items-center h-full space-x-1">
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('rfv_page') }}">RFV</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('produtos_page') }}">Produtos</a>
-                <a class="font-headline text-sm tracking-tight text-on-surface-variant hover:text-on-surface transition-colors hover:bg-surface-container-low rounded-sm px-3 py-1" href="{{ url_for('tendencias_page') }}">Tendências</a>
-                <a class="font-headline text-sm tracking-tight text-primary border-b-2 border-primary/30 pb-1 font-semibold px-3 py-1" href="{{ url_for('analise_page') }}">Análise</a>
-            </nav>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-lg">person</span>
-                <span class="font-medium">{{ username }}</span>
-            </div>
-            <a href="{{ url_for('logout') }}" class="p-2 text-on-surface-variant hover:text-error transition-colors" title="Sair">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
-        </div>
-    </header>
+    {% set active_page = 'analise' %}{% include '_nav.html' %}
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
         
+        <!-- Filtro de Período -->
+        <div class="flex items-center gap-3 flex-none">
+            <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Período:</span>
+            <select id="filtro-periodo" onchange="carregarAnalise()" class="px-3 py-1.5 border border-outline-variant rounded text-sm bg-surface-container-lowest">
+                <option value="365">Últimos 12 meses</option>
+                <option value="180">Últimos 6 meses</option>
+                <option value="90">Últimos 3 meses</option>
+                <option value="30">Último mês</option>
+            </select>
+        </div>
+
         <!-- KPI Cards -->
         <section class="grid grid-cols-4 gap-4 flex-none">
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #112800;">
                 <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Pedidos Analisados</p>
-                <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">1.248</span>
+                <span id="kpi-pedidos" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
             </div>
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #436900;">
                 <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Ticket Médio Geral</p>
-                <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">R$ 18.4k</span>
+                <span id="kpi-ticket" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
             </div>
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #F58220;">
                 <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Correlação Principal</p>
-                <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">0.85</span>
-                <span class="text-[11px] font-medium text-secondary ml-2">Forte</span>
+                <span id="kpi-correlacao" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
+                <span id="kpi-correlacao-label" class="text-[11px] font-medium text-secondary ml-2"></span>
             </div>
             <div class="bg-surface-container-lowest p-4 elevation-1" style="border-left: 3px solid #c4c8ba;">
                 <p class="text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant font-label mb-1">Outliers Detectados</p>
-                <span class="text-2xl font-bold font-headline text-on-surface tracking-tight">23</span>
+                <span id="kpi-outliers" class="text-2xl font-bold font-headline text-on-surface tracking-tight">—</span>
             </div>
         </section>
 
         <!-- Charts Grid -->
         <section class="flex-1 grid grid-cols-2 gap-4 min-h-0">
             <!-- Histogram -->
-            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4">
+            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4 min-h-0">
                 <h3 class="text-sm font-bold font-headline text-on-surface mb-2">Distribuição de Valores</h3>
-                <div class="flex-1" id="chart-histogram"></div>
+                <div class="flex-1 min-h-0" id="chart-histogram"></div>
             </div>
-            
+
             <!-- Box Plot -->
-            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4">
+            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4 min-h-0">
                 <h3 class="text-sm font-bold font-headline text-on-surface mb-2">Ticket por Segmento</h3>
-                <div class="flex-1" id="chart-boxplot"></div>
+                <div class="flex-1 min-h-0" id="chart-boxplot"></div>
             </div>
-            
+
             <!-- Scatter -->
-            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4">
+            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4 min-h-0">
                 <h3 class="text-sm font-bold font-headline text-on-surface mb-2">Valor vs Quantidade</h3>
-                <div class="flex-1" id="chart-scatter"></div>
+                <div class="flex-1 min-h-0" id="chart-scatter"></div>
             </div>
-            
+
             <!-- Heatmap -->
-            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4">
+            <div class="bg-surface-container-lowest elevation-1 flex flex-col p-4 min-h-0">
                 <h3 class="text-sm font-bold font-headline text-on-surface mb-2">Matriz de Correlação</h3>
-                <div class="flex-1" id="chart-heatmap"></div>
+                <div class="flex-1 min-h-0" id="chart-heatmap"></div>
             </div>
         </section>
     </main>
@@ -133,63 +121,131 @@
     </footer>
 
     <script>
-        // Histogram
-        Plotly.newPlot('chart-histogram', [{
-            x: ['0-10k', '10-50k', '50-100k', '100-500k', '500k+'],
-            y: [45, 128, 89, 34, 12],
-            type: 'bar',
-            marker: { color: '#112800' }
-        }], {
-            margin: { l: 40, r: 20, t: 10, b: 30 },
+        const LAYOUT_BASE = {
             paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            yaxis: { gridcolor: 'rgba(116, 121, 108, 0.1)' }
-        }, {responsive: true, displayModeBar: false});
+            plot_bgcolor:  'rgba(0,0,0,0)',
+            font: { family: 'Inter, sans-serif', size: 11 }
+        };
 
-        // Box Plot
-        Plotly.newPlot('chart-boxplot', [
-            { y: [45000, 52000, 48000, 61000, 55000], type: 'box', name: 'Campeão', marker: { color: '#b9f467' } },
-            { y: [35000, 28000, 42000, 38000, 31000], type: 'box', name: 'Fiel', marker: { color: '#cbedab' } },
-            { y: [25000, 18000, 22000, 28000, 15000], type: 'box', name: 'Ativo', marker: { color: '#e8e8e3' } },
-            { y: [12000, 8000, 15000, 11000, 9000], type: 'box', name: 'Em Risco', marker: { color: '#ffddb4' } }
-        ], {
-            margin: { l: 40, r: 20, t: 10, b: 30 },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            yaxis: { gridcolor: 'rgba(116, 121, 108, 0.1)' }
-        }, {responsive: true, displayModeBar: false});
+        function fmtK(v) {
+            return v >= 1e6 ? `R$ ${(v/1e6).toFixed(1)}M` : `R$ ${(v/1e3).toFixed(1)}k`;
+        }
 
-        // Scatter
-        const scatterData = Array.from({length: 50}, () => ({
-            x: Math.floor(Math.random() * 20) + 1,
-            y: Math.floor(Math.random() * 80000) + 10000
-        }));
-        
-        Plotly.newPlot('chart-scatter', [{
-            x: scatterData.map(d => d.x),
-            y: scatterData.map(d => d.y),
-            mode: 'markers',
-            marker: { color: '#F58220', size: 8 }
-        }], {
-            margin: { l: 40, r: 20, t: 10, b: 30 },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            xaxis: { title: 'Quantidade', gridcolor: 'rgba(116, 121, 108, 0.1)' },
-            yaxis: { title: 'Valor (R$)', gridcolor: 'rgba(116, 121, 108, 0.1)' }
-        }, {responsive: true, displayModeBar: false});
+        function corrLabel(v) {
+            const abs = Math.abs(v);
+            if (abs >= 0.8) return 'Forte';
+            if (abs >= 0.5) return 'Moderada';
+            return 'Fraca';
+        }
 
-        // Heatmap
-        Plotly.newPlot('chart-heatmap', [{
-            z: [[1.0, 0.85, 0.92, 0.45], [0.85, 1.0, 0.65, 0.38], [0.92, 0.65, 1.0, 0.52], [0.45, 0.38, 0.52, 1.0]],
-            x: ['Valor', 'Qtd', 'Ticket', 'Freq'],
-            y: ['Valor', 'Qtd', 'Ticket', 'Freq'],
-            type: 'heatmap',
-            colorscale: [[0, '#fafaf5'], [0.5, '#cbedab'], [1, '#112800']]
-        }], {
-            margin: { l: 60, r: 20, t: 10, b: 40 },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)'
-        }, {responsive: true, displayModeBar: false});
+        function carregarAnalise() {
+            const periodo = document.getElementById('filtro-periodo')?.value || '365';
+            fetch(`/api/analise?periodo=${periodo}`)
+            .then(r => r.json())
+            .then(data => {
+                // ── KPIs ─────────────────────────────────────────────────────
+                document.getElementById('kpi-pedidos').textContent =
+                    Number(data.kpis?.total_pedidos || 0).toLocaleString('pt-BR');
+                document.getElementById('kpi-ticket').textContent =
+                    fmtK(data.kpis?.ticket_medio || 0);
+
+                const corrVal = data.kpis?.correlacao_principal ?? null;
+                if (corrVal !== null) {
+                    document.getElementById('kpi-correlacao').textContent = corrVal.toFixed(2);
+                    document.getElementById('kpi-correlacao-label').textContent = corrLabel(corrVal);
+                }
+                document.getElementById('kpi-outliers').textContent =
+                    Number(data.kpis?.total_outliers || 0).toLocaleString('pt-BR');
+
+                // ── Histograma ────────────────────────────────────────────────
+                // API retorna: { bins: [...], counts: [...] }
+                const hist = data.histogram || {};
+                const histBins = hist.bins || [];
+                Plotly.newPlot('chart-histogram', [{
+                    x: histBins,
+                    y: hist.counts || [],
+                    type: 'bar',
+                    marker: {
+                        color: histBins.map((_, i, arr) => {
+                            const t = i / Math.max(arr.length - 1, 1);
+                            return `rgba(${Math.round(17 + t*50)}, ${Math.round(40 + t*65)}, 0, ${0.7 + t*0.3})`;
+                        })
+                    },
+                    hovertemplate: '<b>%{x}</b><br>Pedidos: %{y}<extra></extra>'
+                }], {
+                    ...LAYOUT_BASE,
+                    margin: { l: 40, r: 20, t: 10, b: 40 },
+                    xaxis: { gridcolor: 'rgba(116,121,108,0.1)', title: 'Faixa de Valor' },
+                    yaxis: { gridcolor: 'rgba(116,121,108,0.1)', title: 'Pedidos' }
+                }, {responsive: true, displayModeBar: false});
+
+                // ── Box Plot por segmento ─────────────────────────────────────
+                // API retorna: { segmentos: [...], data: [[...], ...] }
+                const BOX_COLORS = {
+                    'Campeao':  '#b9f467',
+                    'Fiel':     '#cbedab',
+                    'Ativo':    '#e8e8e3',
+                    'Em Risco': '#ffddb4'
+                };
+                const box = data.boxplot || {};
+                const boxSegs = box.segmentos || [];
+                const boxData = box.data || [];
+                const boxTraces = boxSegs.map((seg, i) => ({
+                    y: boxData[i] || [],
+                    type: 'box',
+                    name: seg,
+                    marker: { color: BOX_COLORS[seg] || '#c4c8ba' },
+                    line:   { color: '#74796c' }
+                }));
+                Plotly.newPlot('chart-boxplot', boxTraces.length ? boxTraces : [{
+                    y: [], type: 'box', name: 'Sem dados'
+                }], {
+                    ...LAYOUT_BASE,
+                    margin: { l: 60, r: 20, t: 10, b: 40 },
+                    yaxis: { gridcolor: 'rgba(116,121,108,0.1)', title: 'Ticket (R$)', tickformat: ',.0f' }
+                }, {responsive: true, displayModeBar: false});
+
+                // ── Scatter: Valor vs Qtd de Itens ────────────────────────────
+                // API retorna: [ {x, y}, ... ]
+                const scArr = Array.isArray(data.scatter) ? data.scatter : [];
+                Plotly.newPlot('chart-scatter', [{
+                    x: scArr.map(d => d.x),
+                    y: scArr.map(d => d.y),
+                    mode: 'markers',
+                    marker: { color: '#F58220', size: 7, opacity: 0.7,
+                              line: { width: 0.5, color: '#112800' } },
+                    hovertemplate: 'Itens: %{x}<br>Valor: R$ %{y:,.0f}<extra></extra>'
+                }], {
+                    ...LAYOUT_BASE,
+                    margin: { l: 60, r: 20, t: 10, b: 40 },
+                    xaxis: { title: 'Qtd de Itens', gridcolor: 'rgba(116,121,108,0.1)' },
+                    yaxis: { title: 'Valor Total (R$)', gridcolor: 'rgba(116,121,108,0.1)',
+                             tickformat: ',.0f' }
+                }, {responsive: true, displayModeBar: false});
+
+                // ── Heatmap de Correlação ─────────────────────────────────────
+                // API retorna: { variables: [...], matrix: [[...]] }
+                const corr = data.correlation || {};
+                const corrLabels = corr.variables || corr.labels || [];
+                const corrMatrix = corr.matrix || [];
+                Plotly.newPlot('chart-heatmap', [{
+                    z: corrMatrix,
+                    x: corrLabels,
+                    y: corrLabels,
+                    type: 'heatmap',
+                    colorscale: [[0, '#fafaf5'], [0.5, '#cbedab'], [1, '#112800']],
+                    zmin: -1, zmax: 1,
+                    text: corrMatrix.map(row => row.map(v => (+v).toFixed(2))),
+                    texttemplate: '%{text}',
+                    hovertemplate: '%{y} × %{x}: <b>%{z:.2f}</b><extra></extra>'
+                }], {
+                    ...LAYOUT_BASE,
+                    margin: { l: 80, r: 20, t: 10, b: 60 }
+                }, {responsive: true, displayModeBar: false});
+            })
+            .catch(e => console.error('Erro ao carregar análise:', e));
+        }
+        carregarAnalise();
     </script>
 
 <!-- Chat Widget -->

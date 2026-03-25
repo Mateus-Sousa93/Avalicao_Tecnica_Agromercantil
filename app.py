@@ -11,6 +11,7 @@ import hashlib
 import os
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.utils
@@ -136,7 +137,9 @@ MOCK_ITENS = [
 USERS = {
     "admin": hashlib.sha256("admin123".encode()).hexdigest(),
     "avaliador": hashlib.sha256("agro2024".encode()).hexdigest(),
-    "mateus": hashlib.sha256("231181mateu$".encode()).hexdigest()
+    "mateus": hashlib.sha256("231181mateu$".encode()).hexdigest(),
+    "Lorena.Rezende": "e2c16070db6becc0c4bbb8e1aa766d45bd434a26ea12926c669742c35706474a",
+    "agro.mercantil": "f895a83afaaf90a3df6fd176c8853a5ef70f4ab9e22f41dd91264e6c27f50560"
 }
 
 def login_required(f):
@@ -326,22 +329,52 @@ def explorer_page():
 @app.route('/compra-compartilhada')
 @login_required
 def compra_compartilhada_page():
-    """Pagina de compra compartilhada entre múltiplos clientes"""
+    """Pagina de compra compartilhada — usa tabela pedido_clientes"""
     if DB_AVAILABLE:
-        clientes = run_query("SELECT id_cliente, nome, tipo_cliente FROM clientes WHERE ativo = TRUE ORDER BY nome")
-        grupos = run_query("SELECT id_grupo, nome_grupo, tipo_grupo FROM grupos_compra WHERE ativo = TRUE")
+        clientes = run_query(
+            "SELECT id_cliente, nome, tipo_cliente, regiao FROM clientes ORDER BY nome"
+        )
+        clientes_list = clientes.to_dict('records') if not clientes.empty else MOCK_CLIENTES
     else:
-        clientes = pd.DataFrame(MOCK_CLIENTES)
-        grupos = pd.DataFrame([
-            {'id_grupo': 1, 'nome_grupo': 'Cooperativa Vale do Rio', 'tipo_grupo': 'COOPERATIVA'},
-            {'id_grupo': 2, 'nome_grupo': 'Associação Sul', 'tipo_grupo': 'ASSOCIACAO'}
-        ])
-    
+        clientes_list = MOCK_CLIENTES
+
     return render_template('compra_compartilhada.html',
-                         username=session.get('username'),
-                         clientes=clientes.to_dict('records') if not clientes.empty else MOCK_CLIENTES,
-                         grupos=grupos.to_dict('records') if not grupos.empty else [],
-                         db_available=DB_AVAILABLE)
+                           username=session.get('username'),
+                           clientes=clientes_list,
+                           db_available=DB_AVAILABLE)
+
+@app.route('/dados')
+@login_required
+def dados_page():
+    """Página de validação — tabelas do banco"""
+    resumo = {}
+    if DB_AVAILABLE:
+        for tabela in ['clientes', 'produtos', 'pedidos', 'itens_pedido']:
+            r = run_query(f"SELECT COUNT(*) AS total FROM {tabela}")
+            resumo[tabela] = int(r['total'].iloc[0]) if not r.empty else 0
+    else:
+        resumo = {'clientes': 200, 'produtos': 40, 'pedidos': 1500, 'itens_pedido': 1980}
+    return render_template('dados.html',
+                           username=session.get('username'),
+                           resumo=resumo,
+                           db_available=DB_AVAILABLE)
+
+@app.route('/api/dados/<tabela>')
+@login_required
+def api_dados_tabela(tabela):
+    """Retorna registros de uma tabela para DataTable"""
+    tabelas_permitidas = {
+        'clientes':    "SELECT id_cliente, nome, tipo_cliente, regiao, data_cadastro, limite_credito FROM clientes ORDER BY id_cliente LIMIT 500",
+        'produtos':    "SELECT id_produto, nome, categoria, subcategoria, unidade_medida, custo_referencia, preco_sugerido FROM produtos ORDER BY id_produto",
+        'pedidos':     "SELECT p.id_pedido, TO_CHAR(p.data_pedido,'DD/MM/YYYY') AS data_pedido, c.nome AS cliente, p.status, p.tipo_contrato, ROUND(p.valor_total::numeric,2) AS valor_total, p.regiao_origem, p.regiao_destino FROM pedidos p JOIN clientes c ON p.id_cliente=c.id_cliente ORDER BY p.id_pedido DESC LIMIT 1000",
+        'itens_pedido':"SELECT i.id_item, i.id_pedido, pr.nome AS produto, i.quantidade, ROUND(i.preco_unitario::numeric,2) AS preco_unitario, ROUND(i.subtotal::numeric,2) AS subtotal FROM itens_pedido i JOIN produtos pr ON i.id_produto=pr.id_produto ORDER BY i.id_item DESC LIMIT 2000",
+    }
+    if tabela not in tabelas_permitidas:
+        return jsonify({'error': 'Tabela não permitida'}), 400
+    if not DB_AVAILABLE:
+        return jsonify({'data': []})
+    df = run_query(tabelas_permitidas[tabela])
+    return jsonify({'data': df.to_dict('records') if not df.empty else []})
 
 # ============================================
 # CHATBOT API COM GEMINI
@@ -410,9 +443,9 @@ def chat_api():
 
 Pergunta do usuário: {user_message}"""
 
-        # Gerar resposta com Gemini 2.5 Flash usando system instruction
+        # Gerar resposta com Gemini 3.1 Flash Lite usando system instruction
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.1-flash-lite',
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=AGROBOT_SYSTEM_PROMPT,
@@ -436,16 +469,41 @@ Pergunta do usuário: {user_message}"""
 
 def get_context_data():
     """Retorna dados atuais do sistema para contexto do bot"""
-    if DB_AVAILABLE:
+    if not DB_AVAILABLE:
+        return """- Faturamento: R$ 5.2M | Ticket médio: R$ 18.450 | Contratos: 1.248 | Clientes: 847
+- Top produto: Soja Premium (GMO) — R$ 4.25M
+- Clientes em risco: estimativa ~20% da base"""
+
+    try:
         metrics = get_metrics()
-    else:
+        # Top 3 produtos
+        df_prod = run_query("""
+            SELECT p.nome, ROUND(SUM(i.quantidade*i.preco_unitario)::numeric,0)::bigint AS receita
+            FROM itens_pedido i JOIN produtos p ON i.id_produto=p.id_produto
+            JOIN pedidos ped ON i.id_pedido=ped.id_pedido
+            WHERE ped.status!='Cancelado' AND ped.data_pedido>=CURRENT_DATE-INTERVAL '1 year'
+            GROUP BY p.id_produto,p.nome ORDER BY receita DESC LIMIT 3
+        """)
+        # Contagem por segmento RFV
+        df_seg = run_query("""
+            WITH uc AS (SELECT id_cliente, EXTRACT(EPOCH FROM (CURRENT_DATE-MAX(data_pedido)))::int/86400 AS d,
+                               COUNT(*) AS f FROM pedidos WHERE status!='Cancelado' GROUP BY id_cliente)
+            SELECT CASE WHEN d<=30 AND f>=5 THEN 'Campeão' WHEN d<=60 AND f>=3 THEN 'Fiel'
+                        WHEN d<=90 THEN 'Ativo' ELSE 'Em Risco' END AS seg, COUNT(*) AS n
+            FROM uc GROUP BY seg
+        """)
+        produtos_txt = ' | '.join([f"{r['nome']} R${int(r['receita']):,}".replace(',','.')
+                                    for _, r in df_prod.iterrows()]) if not df_prod.empty else 'N/A'
+        seg_txt = ' | '.join([f"{r['seg']}: {r['n']}"
+                               for _, r in df_seg.iterrows()]) if not df_seg.empty else 'N/A'
+        return f"""- Faturamento: {metrics['faturamento']} | Ticket médio: {metrics['ticket_medio']} | Contratos: {metrics['contratos']} | Clientes: {metrics['clientes']}
+- Top produtos (último ano): {produtos_txt}
+- Segmentos RFV: {seg_txt}
+- Atualizado: {metrics['last_update']}"""
+    except Exception:
         metrics = MOCK_METRICS
-    
-    return f"""- Faturamento total: {metrics['faturamento']}
-- Clientes ativos: {metrics['clientes']}
-- Ticket médio: {metrics['ticket_medio']}
-- Contratos: {metrics['contratos']}
-- Última atualização: {metrics['last_update']}"""
+        return f"""- Faturamento: {metrics['faturamento']} | Ticket médio: {metrics['ticket_medio']}
+- Contratos: {metrics['contratos']} | Clientes: {metrics['clientes']}"""
 
 def get_local_response(message):
     """Fallback simples quando Gemini nao disponivel"""
@@ -470,12 +528,50 @@ def api_tendencias():
     df = tendencias_mensais()
     return jsonify(df.to_dict('records'))
 
+@app.route('/api/tendencias/comparativo')
+@login_required
+def api_tendencias_comparativo():
+    """Comparativo de vendas mensais entre os dois últimos anos com dados reais"""
+    if not DB_AVAILABLE:
+        meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+        return jsonify({'anos': [2024, 2025], 'meses': meses,
+                        'series': {'2024': [0]*12, '2025': [0]*12}})
+    df = run_query("""
+        SELECT EXTRACT(year  FROM data_pedido)::int  AS ano,
+               EXTRACT(month FROM data_pedido)::int  AS mes,
+               ROUND(SUM(valor_total)::numeric, 2)::float AS vendas,
+               COUNT(*)::int                         AS contratos
+        FROM pedidos
+        WHERE status != 'Cancelado'
+          AND data_pedido >= DATE_TRUNC('year', CURRENT_DATE) - INTERVAL '1 year'
+        GROUP BY ano, mes
+        ORDER BY ano, mes
+    """)
+    if df.empty:
+        return jsonify({'anos': [], 'meses': [], 'series': {}})
+    meses_pt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    anos = sorted(df['ano'].unique().tolist())
+    series = {}
+    contratos_series = {}
+    for ano in anos:
+        ano_str = str(ano)
+        series[ano_str]    = [0.0] * 12
+        contratos_series[ano_str] = [0] * 12
+        subset = df[df['ano'] == ano]
+        for _, row in subset.iterrows():
+            idx = int(row['mes']) - 1
+            series[ano_str][idx]    = float(row['vendas'])
+            contratos_series[ano_str][idx] = int(row['contratos'])
+    return jsonify({'anos': anos, 'meses': meses_pt, 'series': series,
+                    'contratos': contratos_series})
+
 @app.route('/api/anomalias')
 @login_required
 def api_anomalias():
     if not DB_AVAILABLE:
         return jsonify([])
-    df = detectar_anomalias()
+    periodo = int(request.args.get('periodo', 365))
+    df = detectar_anomalias(periodo_dias=periodo)
     return jsonify(df.to_dict('records'))
 
 @app.route('/api/inativos')
@@ -485,6 +581,290 @@ def api_inativos():
         return jsonify([])
     df = clientes_inativos()
     return jsonify(df.to_dict('records'))
+
+@app.route('/api/produtos')
+@login_required
+def api_produtos():
+    """Top produtos mais rentáveis com margem — Questão 4"""
+    if not DB_AVAILABLE:
+        return jsonify(MOCK_TOP_PRODUTOS)
+    df = run_query("""
+        WITH preco_medio AS (
+            -- Preço médio praticado por produto como proxy de custo (65% do preço)
+            SELECT id_produto, AVG(preco_unitario) * 0.65 AS custo_estimado
+            FROM itens_pedido GROUP BY id_produto
+        ),
+        receita AS (
+            SELECT p.id_produto,
+                   p.nome,
+                   COALESCE(p.categoria, 'Outros')    AS categoria,
+                   COALESCE(p.subcategoria, p.categoria, 'Outros') AS subcategoria,
+                   SUM(i.quantidade * i.preco_unitario)::float                AS total_vendas,
+                   SUM(i.quantidade * COALESCE(p.custo_referencia, pm.custo_estimado, 0))::float AS total_custo,
+                   SUM(i.quantidade)::float                                   AS volume_total,
+                   COUNT(DISTINCT ped.id_pedido)::int                         AS total_contratos
+            FROM itens_pedido i
+            JOIN produtos  p   ON i.id_produto = p.id_produto
+            JOIN pedidos   ped ON i.id_pedido  = ped.id_pedido
+            JOIN preco_medio pm ON pm.id_produto = p.id_produto
+            WHERE ped.status != 'Cancelado'
+              AND ped.data_pedido >= CURRENT_DATE - INTERVAL '1 year'
+            GROUP BY p.id_produto, p.nome, p.categoria, p.subcategoria, p.custo_referencia
+        )
+        SELECT id_produto,
+               nome,
+               categoria,
+               subcategoria,
+               ROUND(total_vendas::numeric, 2)::float                           AS total_vendas,
+               ROUND(total_custo::numeric, 2)::float                            AS total_custo,
+               ROUND((total_vendas - total_custo)::numeric, 2)::float           AS margem_bruta,
+               ROUND(CASE WHEN total_vendas > 0
+                     THEN ((total_vendas - total_custo) / total_vendas) * 100
+                     ELSE 0 END::numeric, 1)::float                             AS margem_pct,
+               ROUND(volume_total::numeric, 0)::int                             AS volume_total,
+               total_contratos
+        FROM receita
+        ORDER BY total_vendas DESC
+        LIMIT 10
+    """)
+    if df.empty:
+        return jsonify(MOCK_TOP_PRODUTOS)
+    max_v = float(df['total_vendas'].max()) or 1
+    records = []
+    for _, row in df.iterrows():
+        records.append({
+            'id_produto':      int(row['id_produto']),
+            'nome':            str(row['nome']),
+            'categoria':       str(row['categoria']),
+            'subcategoria':    str(row['subcategoria']),
+            'total_vendas':    float(row['total_vendas']),
+            'total_custo':     float(row['total_custo']),
+            'margem_bruta':    float(row['margem_bruta']),
+            'margem_pct':      float(row['margem_pct']),
+            'volume_total':    int(row['volume_total']),
+            'total_contratos': int(row['total_contratos']),
+            'percentual':      round(float(row['total_vendas']) / max_v * 100, 1),
+        })
+    return jsonify(records)
+
+@app.route('/api/analise')
+@login_required
+def api_analise():
+    """Dados consolidados para análise exploratória"""
+    periodo = int(request.args.get('periodo', 365))
+    hist = get_histogram_data(periodo)
+    box  = get_boxplot_data(periodo)
+    scat = get_scatter_data(periodo)
+    corr = get_correlation_data(periodo)
+
+    # KPIs dinâmicos
+    kpis = {'total_pedidos': 0, 'ticket_medio': 0.0, 'correlacao_principal': None, 'total_outliers': 0}
+    if DB_AVAILABLE:
+        df_kpi = run_query("""
+            SELECT COUNT(*) AS total,
+                   ROUND(AVG(valor_total), 2) AS ticket
+            FROM pedidos WHERE status != 'Cancelado'
+        """)
+        if not df_kpi.empty:
+            kpis['total_pedidos'] = int(df_kpi.iloc[0]['total'])
+            kpis['ticket_medio']  = float(df_kpi.iloc[0]['ticket'] or 0)
+        # Correlação principal: maior valor absoluto fora da diagonal
+        mat = corr.get('matrix', [])
+        if mat:
+            best = 0.0
+            n = len(mat)
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        v = abs(mat[i][j])
+                        if v > abs(best):
+                            best = mat[i][j]
+            kpis['correlacao_principal'] = round(best, 2)
+        # Outliers: pedidos com valor > média + 2*desvio
+        df_out = run_query("""
+            SELECT COUNT(*) AS n FROM pedidos
+            WHERE status != 'Cancelado'
+              AND valor_total > (SELECT AVG(valor_total) + 2*STDDEV(valor_total) FROM pedidos WHERE status != 'Cancelado')
+        """)
+        if not df_out.empty:
+            kpis['total_outliers'] = int(df_out.iloc[0]['n'])
+    else:
+        kpis = {'total_pedidos': 1248, 'ticket_medio': 18400.0, 'correlacao_principal': 0.85, 'total_outliers': 23}
+
+    return jsonify({
+        'kpis': kpis,
+        'histogram': hist,
+        'boxplot': box,
+        'scatter': scat,
+        'correlation': corr,
+        'db_available': DB_AVAILABLE
+    })
+
+@app.route('/api/dashboard/filtrar')
+@login_required
+def api_dashboard_filtrar():
+    """Filtra dados do dashboard por período, região e produto"""
+    periodo  = request.args.get('periodo', '365')
+    regiao   = request.args.get('regiao', 'todas')
+    produto  = request.args.get('produto', 'todos')
+
+    if not DB_AVAILABLE:
+        return jsonify({
+            'metrics': MOCK_METRICS,
+            'top_produtos': MOCK_TOP_PRODUTOS,
+            'top_clientes': MOCK_TOP_CLIENTES
+        })
+
+    where_parts = [f"p.data_pedido >= CURRENT_DATE - INTERVAL '{int(periodo)} days'",
+                   "p.status != 'Cancelado'"]
+    params = {}
+    if regiao and regiao.lower() != 'todas':
+        where_parts.append("c.regiao = :regiao")
+        params['regiao'] = regiao
+    if produto and produto.lower() != 'todos':
+        where_parts.append("""
+            EXISTS (SELECT 1 FROM itens_pedido i
+                    JOIN produtos pr ON i.id_produto = pr.id_produto
+                    WHERE i.id_pedido = p.id_pedido
+                    AND LOWER(pr.subcategoria) LIKE LOWER(:produto))
+        """)
+        params['produto'] = f'%{produto}%'
+    where = ' AND '.join(where_parts)
+
+    agg = run_query(f"""
+        SELECT COUNT(*) AS contratos,
+               COALESCE(SUM(p.valor_total), 0) AS faturamento,
+               COALESCE(AVG(p.valor_total), 0) AS ticket_medio
+        FROM pedidos p JOIN clientes c ON p.id_cliente = c.id_cliente
+        WHERE {where}
+    """, params)
+
+    clientes_total = run_query("SELECT COUNT(*) AS total FROM clientes")
+
+    top_produtos = run_query(f"""
+        SELECT pr.nome,
+               SUM(i.quantidade * i.preco_unitario) AS total_vendas
+        FROM pedidos p
+        JOIN itens_pedido i ON p.id_pedido = i.id_pedido
+        JOIN produtos pr    ON i.id_produto = pr.id_produto
+        JOIN clientes c     ON p.id_cliente = c.id_cliente
+        WHERE {where}
+        GROUP BY pr.id_produto, pr.nome
+        ORDER BY total_vendas DESC LIMIT 4
+    """, params)
+
+    if agg.empty:
+        return jsonify({'metrics': MOCK_METRICS, 'top_produtos': [], 'top_clientes': []})
+
+    fat = float(agg['faturamento'].iloc[0])
+    tkt = float(agg['ticket_medio'].iloc[0])
+    cli = int(clientes_total['total'].iloc[0]) if not clientes_total.empty else 0
+
+    max_vp = float(top_produtos['total_vendas'].max()) if not top_produtos.empty else 1
+    top_p = []
+    for _, r in top_produtos.iterrows():
+        top_p.append({'nome': r['nome'],
+                      'total_vendas': float(r['total_vendas']),
+                      'percentual': round(float(r['total_vendas']) / max_vp * 100, 1)})
+
+    # Evolução mensal filtrada
+    mensal = run_query(f"""
+        SELECT TO_CHAR(p.data_pedido, 'Mon') AS mes_abr,
+               EXTRACT(month FROM p.data_pedido)::int AS mes_num,
+               ROUND(SUM(p.valor_total)::numeric, 2)::float AS vendas,
+               COUNT(*)::int AS contratos_mes
+        FROM pedidos p JOIN clientes c ON p.id_cliente = c.id_cliente
+        WHERE {where}
+        GROUP BY mes_abr, mes_num
+        ORDER BY mes_num
+    """, params)
+    meses_pt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    chart_meses, chart_vendas, chart_cresc = [], [], []
+    if not mensal.empty:
+        for _, r in mensal.iterrows():
+            mn = int(r['mes_num']) - 1
+            chart_meses.append(meses_pt[mn])
+            chart_vendas.append(round(float(r['vendas']) / 1e6, 2))
+        for i, v in enumerate(chart_vendas):
+            if i == 0:
+                chart_cresc.append(0)
+            else:
+                prev = chart_vendas[i-1]
+                chart_cresc.append(round((v - prev) / prev * 100, 1) if prev else 0)
+
+    return jsonify({
+        'metrics': {
+            'faturamento': f"R$ {fat/1e6:.1f}M" if fat >= 1e6 else f"R$ {fat:,.0f}".replace(',','.'),
+            'ticket_medio': f"R$ {tkt:,.0f}".replace(',','.'),
+            'contratos': int(agg['contratos'].iloc[0]),
+            'clientes': cli,
+            'variacao_contratos': 'Estavel',
+            'last_update': datetime.now().strftime('%H:%M')
+        },
+        'top_produtos': top_p,
+        'top_clientes': [],
+        'chart': {
+            'meses': chart_meses,
+            'vendas': chart_vendas,
+            'crescimento': chart_cresc
+        }
+    })
+
+@app.route('/api/compra-compartilhada/lista')
+@login_required
+def api_compra_compartilhada_lista():
+    """Lista pedidos com múltiplos clientes (tabela pedido_clientes)"""
+    if not DB_AVAILABLE:
+        return jsonify([])
+    df = run_query("""
+        SELECT
+            p.id_pedido,
+            TO_CHAR(p.data_pedido, 'DD/MM/YYYY') AS data_pedido,
+            p.valor_total,
+            p.tipo_contrato,
+            p.status,
+            p.regiao_origem,
+            p.regiao_destino,
+            c.nome AS cliente_nome,
+            pc.percentual_rateio,
+            pc.valor_rateado,
+            COUNT(*) OVER (PARTITION BY p.id_pedido) AS total_participantes
+        FROM pedido_clientes pc
+        JOIN pedidos  p ON pc.id_pedido  = p.id_pedido
+        JOIN clientes c ON pc.id_cliente = c.id_cliente
+        ORDER BY p.id_pedido, pc.percentual_rateio DESC
+    """)
+    return jsonify(df.to_dict('records') if not df.empty else [])
+
+@app.route('/api/compra-compartilhada/resumo')
+@login_required
+def api_compra_compartilhada_resumo():
+    """KPIs de compras compartilhadas"""
+    if not DB_AVAILABLE:
+        return jsonify({'total_pedidos': 0, 'total_clientes': 0, 'valor_total': 0, 'regioes': []})
+    df = run_query("""
+        SELECT
+            COUNT(DISTINCT pc.id_pedido) AS total_pedidos,
+            COUNT(DISTINCT pc.id_cliente) AS total_clientes,
+            SUM(p.valor_total) / 2.0 AS valor_total
+        FROM pedido_clientes pc
+        JOIN pedidos p ON pc.id_pedido = p.id_pedido
+    """)
+    regioes = run_query("""
+        SELECT c.regiao, COUNT(DISTINCT pc.id_pedido) AS pedidos,
+               SUM(pc.valor_rateado) AS valor
+        FROM pedido_clientes pc
+        JOIN clientes c ON pc.id_cliente = c.id_cliente
+        GROUP BY c.regiao ORDER BY valor DESC
+    """)
+    if df.empty:
+        return jsonify({'total_pedidos': 0, 'total_clientes': 0, 'valor_total': 0, 'regioes': []})
+    return jsonify({
+        'total_pedidos':  int(df['total_pedidos'].iloc[0]),
+        'total_clientes': int(df['total_clientes'].iloc[0]),
+        'valor_total':    float(df['valor_total'].iloc[0]) if df['valor_total'].iloc[0] else 0,
+        'regioes': regioes.to_dict('records') if not regioes.empty else []
+    })
 
 # ============================================
 # APIs - CORREÇÃO DE ANOMALIAS
@@ -948,10 +1328,10 @@ def get_top_produtos(limit=5):
 
 def calcular_rfv():
     """Questao 2: RFV - Usa CTE + Window Functions"""
-    return run_query("""
+    df = run_query("""
     WITH ultima_compra AS (
         SELECT id_cliente, MAX(data_pedido) as ultima_data,
-               CURRENT_DATE - MAX(data_pedido) as dias_desde_ultimo
+               EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(data_pedido)))::int / 86400 AS dias_desde_ultimo
         FROM pedidos WHERE status != 'Cancelado' GROUP BY id_cliente
     ),
     metricas AS (
@@ -961,10 +1341,13 @@ def calcular_rfv():
         FROM pedidos WHERE status != 'Cancelado' GROUP BY id_cliente
     )
     SELECT c.id_cliente, c.nome, c.tipo_cliente, c.regiao,
-           uc.dias_desde_ultimo, uc.ultima_data, m.total_pedidos,
-           m.ticket_medio, m.valor_total,
-           CASE 
-               WHEN uc.dias_desde_ultimo <= 30 AND m.total_pedidos >= 5 THEN 'Campeao'
+           uc.dias_desde_ultimo::int AS dias_desde_ultimo,
+           TO_CHAR(uc.ultima_data, 'DD/MM/YYYY') AS ultima_data,
+           m.total_pedidos::int AS total_pedidos,
+           m.ticket_medio::float AS ticket_medio,
+           m.valor_total::float AS valor_total,
+           CASE
+               WHEN uc.dias_desde_ultimo <= 30 AND m.total_pedidos >= 5 THEN 'Campeão'
                WHEN uc.dias_desde_ultimo <= 60 AND m.total_pedidos >= 3 THEN 'Fiel'
                WHEN uc.dias_desde_ultimo <= 90 THEN 'Ativo'
                ELSE 'Em Risco'
@@ -974,50 +1357,79 @@ def calcular_rfv():
     JOIN metricas m ON c.id_cliente = m.id_cliente
     ORDER BY m.valor_total DESC;
     """)
+    return df
 
 def tendencias_mensais():
     """Questao 5: Tendencias - Usa CTE + LAG"""
-    return run_query("""
+    df = run_query("""
     WITH mensal AS (
-        SELECT DATE_TRUNC('month', data_pedido) as mes,
-               SUM(valor_total) as total, COUNT(*) as contratos
+        SELECT DATE_TRUNC('month', data_pedido) AS mes,
+               SUM(valor_total)::float          AS total,
+               COUNT(*)::int                    AS contratos
         FROM pedidos WHERE status != 'Cancelado'
-        GROUP BY DATE_TRUNC('month', data_pedido) ORDER BY mes
+        GROUP BY DATE_TRUNC('month', data_pedido)
     )
-    SELECT TO_CHAR(mes, 'YYYY-MM') as mes_ano, ROUND(total, 2) as vendas,
+    SELECT TO_CHAR(mes, 'YYYY-MM')                                       AS mes_ano,
+           TO_CHAR(mes, 'Mon/YYYY')                                      AS mes_label,
+           ROUND(total::numeric, 2)::float                               AS vendas,
            contratos,
-           ROUND(((total - LAG(total) OVER (ORDER BY mes)) / 
-           NULLIF(LAG(total) OVER (ORDER BY mes), 0)) * 100, 2) as crescimento
-    FROM mensal ORDER BY mes DESC;
+           ROUND(((total - LAG(total) OVER (ORDER BY mes)) /
+                  NULLIF(LAG(total) OVER (ORDER BY mes), 0)) * 100, 2)::float AS crescimento
+    FROM mensal
+    ORDER BY mes DESC;
     """)
+    if not df.empty:
+        df['vendas'] = df['vendas'].astype(float)
+        df['contratos'] = df['contratos'].astype(int)
+        df['crescimento'] = df['crescimento'].where(df['crescimento'].notna(), None)
+    return df
 
-def detectar_anomalias():
-    """Questao 7: Anomalias - Usa CTE"""
-    return run_query("""
+def detectar_anomalias(periodo_dias=365):
+    """Questao 7: Anomalias - Usa CTE. Campos alinhados com anomalias.html."""
+    df = run_query(f"""
     WITH soma_itens AS (
-        SELECT id_pedido, SUM(subtotal) as valor_calculado
+        SELECT id_pedido,
+               SUM(subtotal) AS valor_calculado
         FROM itens_pedido GROUP BY id_pedido
     )
-    SELECT p.id_pedido, p.data_pedido, c.nome as cliente,
-           p.valor_total as registrado, si.valor_calculado,
-           ROUND(ABS(p.valor_total - si.valor_calculado), 2) as diferenca
+    SELECT p.id_pedido,
+           TO_CHAR(p.data_pedido, 'DD/MM/YYYY')           AS data_pedido,
+           c.nome                                          AS cliente,
+           p.valor_total                                   AS valor_total,
+           p.valor_total                                   AS valor_registrado,
+           si.valor_calculado::float                       AS valor_calculado,
+           ROUND(ABS(p.valor_total - si.valor_calculado), 2)::float AS diferenca,
+           ROUND(ABS(p.valor_total - si.valor_calculado) * 100.0
+                 / NULLIF(si.valor_calculado, 0), 2)::float AS diferenca_pct,
+           CASE
+               WHEN p.valor_total > si.valor_calculado THEN 'SOBREFATURAMENTO'
+               ELSE 'SUBFATURAMENTO'
+           END AS tipo_anomalia,
+           'PENDENTE' AS status_correcao
     FROM pedidos p
     JOIN soma_itens si ON p.id_pedido = si.id_pedido
-    JOIN clientes c ON p.id_cliente = c.id_cliente
+    JOIN clientes c    ON p.id_cliente = c.id_cliente
     WHERE ABS(p.valor_total - si.valor_calculado) > 0.01
-    ORDER BY diferenca DESC;
+      AND p.data_pedido >= CURRENT_DATE - INTERVAL '{int(periodo_dias)} days'
+    ORDER BY diferenca DESC
+    LIMIT 500;
     """)
+    if not df.empty:
+        df['valor_total']    = df['valor_total'].astype(float)
+        df['valor_registrado'] = df['valor_registrado'].astype(float)
+    return df
 
 def clientes_inativos():
     """Questao 6: Clientes Inativos - Usa CTE"""
     return run_query("""
     WITH ultima_atividade AS (
-        SELECT id_cliente, MAX(data_pedido) as ultima_compra,
-               CURRENT_DATE - MAX(data_pedido) as dias_inativo
+        SELECT id_cliente, MAX(data_pedido) AS ultima_compra,
+               EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(data_pedido)))::int / 86400 AS dias_inativo
         FROM pedidos GROUP BY id_cliente
     )
     SELECT c.id_cliente, c.nome, c.tipo_cliente, c.regiao,
-           ua.dias_inativo, ua.ultima_compra
+           ua.dias_inativo::int                          AS dias_inativo,
+           TO_CHAR(ua.ultima_compra, 'DD/MM/YYYY')       AS ultima_compra
     FROM clientes c
     JOIN ultima_atividade ua ON c.id_cliente = ua.id_cliente
     WHERE ua.dias_inativo > 180
@@ -1044,48 +1456,105 @@ def top_produtos_db():
 # ============================================
 # DADOS PARA ANALISE EXPLORATORIA
 # ============================================
-def get_histogram_data():
-    """Dados para histograma de distribuicao de valores"""
-    # Mock data - em producao viria do banco
-    return {
-        'bins': ['0-10k', '10-50k', '50-100k', '100-500k', '500k+'],
-        'counts': [45, 128, 89, 34, 12]
-    }
+def get_histogram_data(periodo=365):
+    """Dados reais para histograma de distribuicao de valores dos pedidos"""
+    if not DB_AVAILABLE:
+        return {'bins': ['0-10k', '10-50k', '50-100k', '100-500k', '500k+'],
+                'counts': [45, 128, 89, 34, 12]}
+    df = run_query(f"""
+        SELECT
+            COUNT(CASE WHEN valor_total < 10000                  THEN 1 END)::int AS c1,
+            COUNT(CASE WHEN valor_total BETWEEN 10000 AND 49999  THEN 1 END)::int AS c2,
+            COUNT(CASE WHEN valor_total BETWEEN 50000 AND 99999  THEN 1 END)::int AS c3,
+            COUNT(CASE WHEN valor_total BETWEEN 100000 AND 499999 THEN 1 END)::int AS c4,
+            COUNT(CASE WHEN valor_total >= 500000                 THEN 1 END)::int AS c5
+        FROM pedidos
+        WHERE status != 'Cancelado'
+          AND data_pedido >= CURRENT_DATE - INTERVAL '{int(periodo)} days'
+    """)
+    if df.empty:
+        return {'bins': ['0-10k', '10-50k', '50-100k', '100-500k', '500k+'], 'counts': [0]*5}
+    row = df.iloc[0]
+    return {'bins': ['0-10k', '10-50k', '50-100k', '100-500k', '500k+'],
+            'counts': [int(row['c1']), int(row['c2']), int(row['c3']), int(row['c4']), int(row['c5'])]}
 
-def get_boxplot_data():
-    """Dados para box plot por segmento"""
-    return {
-        'segmentos': ['Campeao', 'Fiel', 'Ativo', 'Em Risco'],
-        'data': [
-            [45000, 52000, 48000, 61000, 55000, 58000, 49000],  # Campeao
-            [35000, 28000, 42000, 38000, 31000, 36000, 39000],  # Fiel
-            [25000, 18000, 22000, 28000, 15000, 19000, 21000],  # Ativo
-            [12000, 8000, 15000, 11000, 9000, 5000, 7000],      # Em Risco
-        ]
-    }
+def get_boxplot_data(periodo=365):
+    """Dados reais para box plot de ticket por segmento RFV"""
+    if not DB_AVAILABLE:
+        return {'segmentos': ['Campeão', 'Fiel', 'Ativo', 'Em Risco'],
+                'data': [[45000,52000,48000,61000,55000],[35000,28000,42000,38000,31000],
+                         [25000,18000,22000,28000,15000],[12000,8000,15000,11000,9000]]}
+    df = run_query(f"""
+        WITH rfv AS (
+            SELECT id_cliente,
+                   ROUND(AVG(valor_total),2)::float                          AS ticket_medio,
+                   COUNT(*)::int                                              AS freq,
+                   (EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(data_pedido)))::int / 86400) AS recencia
+            FROM pedidos
+            WHERE status != 'Cancelado'
+              AND data_pedido >= CURRENT_DATE - INTERVAL '{int(periodo)} days'
+            GROUP BY id_cliente
+        )
+        SELECT CASE
+                   WHEN recencia <= 30 AND freq >= 5 THEN 'Campeão'
+                   WHEN recencia <= 60 AND freq >= 3 THEN 'Fiel'
+                   WHEN recencia <= 90              THEN 'Ativo'
+                   ELSE 'Em Risco'
+               END AS segmento,
+               ticket_medio
+        FROM rfv
+    """)
+    if df.empty:
+        return {'segmentos': [], 'data': []}
+    grupos = {}
+    for _, row in df.iterrows():
+        grupos.setdefault(str(row['segmento']), []).append(float(row['ticket_medio']))
+    ordem = ['Campeão', 'Fiel', 'Ativo', 'Em Risco']
+    return {'segmentos': [s for s in ordem if s in grupos],
+            'data':      [grupos[s] for s in ordem if s in grupos]}
 
-def get_scatter_data():
-    """Dados para scatter plot valor vs quantidade"""
-    import random
-    random.seed(42)
-    pontos = []
-    for i in range(50):
-        qtd = random.randint(1, 20)
-        valor = qtd * random.uniform(2000, 5000) + random.uniform(-5000, 5000)
-        pontos.append({'x': qtd, 'y': round(valor, 2)})
-    return pontos
+def get_scatter_data(periodo=365):
+    """Dados reais para scatter valor_total vs qtd_itens por pedido"""
+    if not DB_AVAILABLE:
+        import random; random.seed(42)
+        return [{'x': random.randint(1,20), 'y': round(random.uniform(5000,300000),2)} for _ in range(50)]
+    df = run_query(f"""
+        SELECT p.valor_total::float AS valor_total,
+               COUNT(i.id_item)::int AS qtd_itens
+        FROM pedidos p
+        JOIN itens_pedido i ON p.id_pedido = i.id_pedido
+        WHERE p.status != 'Cancelado'
+          AND p.data_pedido >= CURRENT_DATE - INTERVAL '{int(periodo)} days'
+        GROUP BY p.id_pedido, p.valor_total
+        ORDER BY RANDOM()
+        LIMIT 300
+    """)
+    if df.empty:
+        return []
+    return [{'x': int(r['qtd_itens']), 'y': float(r['valor_total'])} for _, r in df.iterrows()]
 
-def get_correlation_data():
-    """Dados para heatmap de correlacao"""
-    return {
-        'variables': ['Valor', 'Quantidade', 'Ticket', 'Frequencia'],
-        'matrix': [
-            [1.0, 0.85, 0.92, 0.45],
-            [0.85, 1.0, 0.65, 0.38],
-            [0.92, 0.65, 1.0, 0.52],
-            [0.45, 0.38, 0.52, 1.0]
-        ]
-    }
+def get_correlation_data(periodo=365):
+    """Dados reais para heatmap de correlacao entre metricas do cliente"""
+    if not DB_AVAILABLE:
+        return {'variables': ['Valor Total','Qtd Pedidos','Ticket Médio','Dias Inativo'],
+                'matrix': [[1.0,0.85,0.92,-0.45],[0.85,1.0,0.65,-0.38],
+                            [0.92,0.65,1.0,-0.52],[-0.45,-0.38,-0.52,1.0]]}
+    df = run_query(f"""
+        SELECT ROUND(SUM(valor_total)::numeric, 2)::float  AS valor_total,
+               COUNT(*)::int                               AS qtd_pedidos,
+               ROUND(AVG(valor_total)::numeric, 2)::float  AS ticket_medio,
+               (EXTRACT(EPOCH FROM (CURRENT_DATE - MAX(data_pedido)))::int / 86400)::float AS dias_inativo
+        FROM pedidos
+        WHERE status != 'Cancelado'
+          AND data_pedido >= CURRENT_DATE - INTERVAL '{int(periodo)} days'
+        GROUP BY id_cliente
+    """)
+    if df.empty or len(df) < 4:
+        return {'variables': [], 'matrix': []}
+    cols   = ['valor_total', 'qtd_pedidos', 'ticket_medio', 'dias_inativo']
+    labels = ['Valor Total', 'Qtd Pedidos', 'Ticket Médio', 'Dias Inativo']
+    mat = df[cols].astype(float).corr().round(2).values.tolist()
+    return {'variables': labels, 'matrix': mat}
 
 # ============================================
 # GRAFICOS PLOTLY
@@ -1168,4 +1637,4 @@ def get_tendencias_chart():
 # MAIN
 # ============================================
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8501)
