@@ -61,4 +61,4 @@ data/processed/
 # Test coverage
 htmlcov/
 .coverage
-.pytest_cache/
+.pytest_cache/old/
