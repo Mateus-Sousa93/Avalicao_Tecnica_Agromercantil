@@ -374,7 +374,12 @@ def api_dados_tabela(tabela):
     if not DB_AVAILABLE:
         return jsonify({'data': []})
     df = run_query(tabelas_permitidas[tabela])
-    return jsonify({'data': df.to_dict('records') if not df.empty else []})
+    if df.empty:
+        return jsonify({'data': []})
+    # to_json serializa corretamente Decimal, date, NaT e outros tipos PostgreSQL
+    import json as _json
+    records = _json.loads(df.to_json(orient='records', date_format='iso', default_handler=str))
+    return jsonify({'data': records})
 
 # ============================================
 # CHATBOT API COM GEMINI
@@ -443,9 +448,9 @@ def chat_api():
 
 Pergunta do usuário: {user_message}"""
 
-        # Gerar resposta com Gemini 3.1 Flash Lite usando system instruction
+        # Gerar resposta com Gemini usando system instruction
         response = gemini_client.models.generate_content(
-            model='gemini-3.1-flash-lite',
+            model='gemini-2.0-flash-lite',
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=AGROBOT_SYSTEM_PROMPT,
@@ -481,7 +486,7 @@ def get_context_data():
             SELECT p.nome, ROUND(SUM(i.quantidade*i.preco_unitario)::numeric,0)::bigint AS receita
             FROM itens_pedido i JOIN produtos p ON i.id_produto=p.id_produto
             JOIN pedidos ped ON i.id_pedido=ped.id_pedido
-            WHERE ped.status!='Cancelado' AND ped.data_pedido>=CURRENT_DATE-INTERVAL '1 year'
+            WHERE ped.status!='Cancelado'
             GROUP BY p.id_produto,p.nome ORDER BY receita DESC LIMIT 3
         """)
         # Contagem por segmento RFV
@@ -506,8 +511,76 @@ def get_context_data():
 - Contratos: {metrics['contratos']} | Clientes: {metrics['clientes']}"""
 
 def get_local_response(message):
-    """Fallback simples quando Gemini nao disponivel"""
-    return "Ops! Meu sistema de IA esta temporariamente indisponivel. Por favor, tente novamente em alguns segundos, ou verifique os dados diretamente no dashboard."
+    """Fallback quando Gemini nao disponivel — respostas contextuais com dados reais do banco"""
+    msg = message.lower()
+    try:
+        if DB_AVAILABLE:
+            if any(w in msg for w in ['margem', 'lucro', 'rentavel', 'produto', 'maior margem']):
+                df = run_query("""
+                    SELECT p.nome,
+                           ROUND(SUM(i.quantidade*i.preco_unitario)::numeric,0)::bigint AS receita
+                    FROM itens_pedido i
+                    JOIN produtos p   ON i.id_produto = p.id_produto
+                    JOIN pedidos  ped ON i.id_pedido  = ped.id_pedido
+                    WHERE ped.status != 'Cancelado'
+                    GROUP BY p.id_produto, p.nome ORDER BY receita DESC LIMIT 3
+                """)
+                if not df.empty:
+                    top = ', '.join([f"{r['nome']} (R$ {int(r['receita']):,})".replace(',','.')
+                                     for _, r in df.iterrows()])
+                    return f"Os produtos com maior receita sao: {top}. Acesse a pagina Produtos para detalhes de margem por commodity."
+
+            if any(w in msg for w in ['risco', 'inativo', 'churn', 'cliente']):
+                df = run_query("""
+                    WITH rfv AS (
+                        SELECT id_cliente,
+                               EXTRACT(EPOCH FROM (MAX(data_pedido_max) - MAX(data_pedido)))::int/86400 AS d,
+                               COUNT(*) AS f
+                        FROM (SELECT id_cliente, data_pedido,
+                                     MAX(data_pedido) OVER() AS data_pedido_max
+                              FROM pedidos WHERE status != 'Cancelado') s
+                        GROUP BY id_cliente
+                    )
+                    SELECT CASE WHEN d<=30 AND f>=5 THEN 'Campeao'
+                                WHEN d<=60 AND f>=3 THEN 'Fiel'
+                                WHEN d<=90           THEN 'Ativo'
+                                ELSE 'Em Risco' END AS seg,
+                           COUNT(*) AS n FROM rfv GROUP BY seg
+                """)
+                if not df.empty:
+                    risco = int(df[df['seg']=='Em Risco']['n'].iloc[0]) if 'Em Risco' in df['seg'].values else 0
+                    total = int(df['n'].sum())
+                    return (f"De {total} clientes com pedidos registrados, {risco} estao classificados "
+                            f"como Em Risco de churn. Acesse RFV para a segmentacao completa.")
+
+            if any(w in msg for w in ['anomalia', 'divergencia', 'pendente', 'correcao']):
+                df = run_query("SELECT COUNT(*) AS n FROM vw_anomalias_completas WHERE status_correcao='PENDENTE'")
+                n = int(df['n'].iloc[0]) if not df.empty else 0
+                return (f"Ha {n} anomalia{'s' if n != 1 else ''} pendente{'s' if n != 1 else ''} de correcao. "
+                        f"Acesse Analises > Anomalias para visualizar e corrigir os pedidos com divergencias.")
+
+            if any(w in msg for w in ['tendencia', 'crescimento', 'venda', 'faturamento', 'receita']):
+                m = get_metrics()
+                return (f"Faturamento: {m['faturamento']} | Ticket medio: {m['ticket_medio']} | "
+                        f"Contratos: {m['contratos']} | Clientes: {m['clientes']}. "
+                        f"Acesse a pagina Tendencias para ver a evolucao mensal e o comparativo anual.")
+
+        # Respostas genericas por categoria (sem banco)
+        if any(w in msg for w in ['margem', 'lucro', 'rentavel', 'produto']):
+            return "Para informacoes de margem e rentabilidade, acesse a pagina Produtos no menu superior."
+        if any(w in msg for w in ['risco', 'inativo', 'churn', 'cliente']):
+            return "Para segmentacao de clientes e riscos de churn, acesse as paginas RFV e Clientes Inativos."
+        if any(w in msg for w in ['anomalia', 'divergencia', 'pendente']):
+            return "Para anomalias em pedidos, acesse Analises > Anomalias no menu."
+        if any(w in msg for w in ['tendencia', 'crescimento', 'venda', 'faturamento']):
+            return "Para tendencias de vendas e evolucao mensal, acesse a pagina Tendencias."
+        return ("Sou o AgroBot, assistente de analise de dados da Agromercantil. "
+                "Posso responder sobre vendas, clientes, produtos, anomalias e tendencias. "
+                "O que gostaria de consultar?")
+    except Exception:
+        return ("Sou o AgroBot, assistente de analise de dados da Agromercantil. "
+                "Posso responder sobre vendas, clientes, produtos, anomalias e tendencias. "
+                "O que gostaria de consultar?")
 
 # ============================================
 # APIs - DADOS
@@ -709,13 +782,26 @@ def api_dashboard_filtrar():
     produto  = request.args.get('produto', 'todos')
 
     if not DB_AVAILABLE:
+        meses_pt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+        mock_meses = meses_pt[-6:]
+        mock_vendas = [2.1, 2.4, 2.9, 3.3, 3.8, 4.1]
+        mock_cresc  = [0, 14.3, 20.8, 13.8, 15.2, 7.9]
         return jsonify({
             'metrics': MOCK_METRICS,
             'top_produtos': MOCK_TOP_PRODUTOS,
-            'top_clientes': MOCK_TOP_CLIENTES
+            'top_clientes': MOCK_TOP_CLIENTES,
+            'chart': {'meses': mock_meses, 'vendas': mock_vendas, 'crescimento': mock_cresc}
         })
 
-    where_parts = [f"p.data_pedido >= CURRENT_DATE - INTERVAL '{int(periodo)} days'",
+    # Usar MAX(data_pedido) como referencia para nao depender de CURRENT_DATE
+    # (os dados podem ser de 2024/2025 e o servidor estar em 2026)
+    ref_q = run_query("SELECT MAX(data_pedido)::date AS dt FROM pedidos WHERE status != 'Cancelado'")
+    if not ref_q.empty and ref_q['dt'].iloc[0] is not None:
+        ref_date = f"'{ref_q['dt'].iloc[0]}'"
+    else:
+        ref_date = 'CURRENT_DATE'
+
+    where_parts = [f"p.data_pedido >= {ref_date}::date - INTERVAL '{int(periodo)} days'",
                    "p.status != 'Cancelado'"]
     params = {}
     if regiao and regiao.lower() != 'todas':
